@@ -368,6 +368,7 @@ class VideoDataset(tutils.data.Dataset):
         self.BATCH_SIZE = args.BATCH_SIZE
         self.MIN_SEQ_STEP = args.MIN_SEQ_STEP
         self.MAX_SEQ_STEP = args.MAX_SEQ_STEP
+        self.MODE = args.MODE
         # self.MULIT_SCALE = args.MULIT_SCALE
         self.full_test = full_test
         self.skip_step = skip_step #max(skip_step, self.SEQ_LEN*self.MIN_SEQ_STEP/2)
@@ -580,9 +581,9 @@ class VideoDataset(tutils.data.Dataset):
     def _make_lists_roadpp(self):
         
         if self.MODE =='train':
-            self.anno_file  = os.path.join(self.root, 'road_trainval_v1.0.json')
+            self.anno_file  = os.path.join(self.root, 'road_plus_plus_trainval_v1.0.json')
         elif self.MODE =='test':
-            self.anno_file  = os.path.join(self.root, 'road_trainval_v1.0.json')
+            self.anno_file  = os.path.join(self.root, 'road_plus_plus_test_v1.0.json')
         with open(self.anno_file,'r') as fff:
             final_annots = json.load(fff)
         
