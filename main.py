@@ -56,9 +56,9 @@ def main():
     #  Name of the dataset only voc or coco are supported
     parser.add_argument('--DATASET', default='road', 
                         type=str,help='dataset being used')
-    parser.add_argument('--TRAIN_SUBSETS', default='train_3,', 
+    parser.add_argument('--TRAIN_SUBSETS', default='train,', 
                         type=str,help='Training SUBSETS seprated by ,')
-    parser.add_argument('--VAL_SUBSETS', default='', 
+    parser.add_argument('--VAL_SUBSETS', default='val', 
                         type=str,help='Validation SUBSETS seprated by ,')
     parser.add_argument('--TEST_SUBSETS', default='', 
                         type=str,help='Testing SUBSETS seprated by ,')
@@ -253,7 +253,6 @@ def main():
     args.num_ego_classes = val_dataset.num_ego_classes
     args.ego_classes = val_dataset.ego_classes
     args.head_size = 256
-
     if args.MODE in ['train', 'val','gen_dets']:
         net = build_retinanet(args).cuda()
         if args.MULTI_GPUS:

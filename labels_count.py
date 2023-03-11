@@ -78,7 +78,7 @@ for d_path in [road_trainval_path,road_test_path]:
         print(actions[i] +" : "+ str(action_labs[i]))
 
 
-# action labels count
+# location labels count
 
 for d_path in [road_trainval_path,road_test_path]:
     with open(d_path,'r') as fff:
@@ -100,3 +100,59 @@ for d_path in [road_trainval_path,road_test_path]:
     for i in range(len(loc_labs)):
         print(locs[i] +" : "+ str(loc_labs[i]))
 
+
+
+# duplex labels count
+
+for d_path in [road_trainval_path,road_test_path]:
+    dup_final_list = []
+    with open(d_path,'r') as fff:
+        road_json = json.load(fff)
+
+    dups = road_json['all_duplex_labels']
+    dup_labs = np.zeros(len(dups),dtype=int)
+    tube_set = set()
+    for videoname in road_json['db']:
+        for frame in road_json['db'][videoname]['frames']:
+            if 'annos' in road_json['db'][videoname]['frames'][frame].keys():
+                for anno in road_json['db'][videoname]['frames'][frame]['annos']:
+                    dupss = road_json['db'][videoname]['frames'][frame]['annos'][anno]['duplex_ids']
+                    for dup in dupss:
+                        dup_labs[dup] += 1
+
+    print("All duplex labs:", d_path)
+    print("Total labels:", sum(dup_labs))
+    for i in range(len(dup_labs)):
+        if dup_labs[i] >0:
+            print(dups[i] +" : "+ str(dup_labs[i]))
+            dup_final_list.append(dups[i])
+
+    print(dup_final_list)
+
+
+# triplet labels count
+
+for d_path in [road_trainval_path,road_test_path]:
+    trip_final_list = []
+    with open(d_path,'r') as fff:
+        road_json = json.load(fff)
+
+    trips = road_json['all_triplet_labels']
+    trip_labs = np.zeros(len(trips),dtype=int)
+    tube_set = set()
+    for videoname in road_json['db']:
+        for frame in road_json['db'][videoname]['frames']:
+            if 'annos' in road_json['db'][videoname]['frames'][frame].keys():
+                for anno in road_json['db'][videoname]['frames'][frame]['annos']:
+                    tripss = road_json['db'][videoname]['frames'][frame]['annos'][anno]['triplet_ids']
+                    for trip in tripss:
+                        trip_labs[trip] += 1
+
+    print("All triplet labs:", d_path)
+    print("Total labels:", sum(trip_labs))
+    for i in range(len(trip_labs)):
+        if trip_labs[i] >0:
+            print(trips[i] +" : "+ str(trip_labs[i]))
+            trip_final_list.append(trips[i])
+
+    print(trip_final_list)

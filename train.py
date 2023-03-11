@@ -95,6 +95,8 @@ def run_train(args, train_data_loader, net, optimizer, epoch, iteration):
 
     for internel_iter, (images, gt_boxes, gt_labels, ego_labels, counts, img_indexs, wh) in enumerate(train_data_loader):
         iteration += 1
+        # if internel_iter > 20:
+        #     break
         images = images.cuda(0, non_blocking=True)
         gt_boxes = gt_boxes.cuda(0, non_blocking=True)
         gt_labels = gt_labels.cuda(0, non_blocking=True)

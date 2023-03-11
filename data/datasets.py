@@ -5,7 +5,7 @@ Target is in xmin, ymin, xmax, ymax, label
 coordinates are in range of [0, 1] normlised height and width
 
 """
-
+import cv2
 import json, os
 import torch
 import pdb, time
@@ -611,6 +611,7 @@ class VideoDataset(tutils.data.Dataset):
         frame_level_list = []
 
         for videoname in sorted(database.keys()):
+            # print(is_part_of_subsets(final_annots['db'][videoname]['split_ids'], self.SUBSETS))
             if not is_part_of_subsets(final_annots['db'][videoname]['split_ids'], self.SUBSETS):
                 continue
             
@@ -619,6 +620,7 @@ class VideoDataset(tutils.data.Dataset):
             self.video_list.append(videoname)
             
             frames = database[videoname]['frames']
+            # print(numf)
             frame_level_annos = [ {'labeled':False,'ego_label':-1,'boxes':np.asarray([]),'labels':np.asarray([])} for _ in range(numf)]
 
             frame_nums = [int(f) for f in frames.keys()]
@@ -629,7 +631,7 @@ class VideoDataset(tutils.data.Dataset):
                     
                     frame_index = frame_num-1  
                     frame_level_annos[frame_index]['labeled'] = True 
-                    frame_level_annos[frame_index]['ego_label'] = frames[frame_id]['av_action_ids'][0]
+                    # frame_level_annos[frame_index]['ego_label'] = frames[frame_id]['av_action_ids'][0]
                     
                     frame = frames[frame_id]
                     if 'annos' not in frame.keys():
@@ -638,14 +640,17 @@ class VideoDataset(tutils.data.Dataset):
                     all_boxes = []
                     all_labels = []
                     frame_annos = frame['annos']
+                    # temp_img = cv2.imread('../roadpp/rgb-images/'+videoname+'/{:05d}.jpg'.format(frame_num))
                     for key in frame_annos:
                         width, height = frame['width'], frame['height']
                         anno = frame_annos[key]
                         box = anno['box']
                         
                         assert box[0]<box[2] and box[1]<box[3], box
-                        assert width==1280 and height==960, (width, height, box)
-
+                        assert width==1920 and height==1280, (width, height, box)
+                        
+                        # temp_img = cv2.rectangle(temp_img, (int(box[0]*1920),int(box[1]*1280)), (int(box[2]*1920),int(box[3]*1280)), (255,0,0), 2)
+                        # cv2.imwrite('temp_img.png',temp_img)
                         for bi in range(4):
                             assert 0<=box[bi]<=1.01, box
                             box[bi] = min(1.0, max(0, box[bi]))
@@ -655,6 +660,7 @@ class VideoDataset(tutils.data.Dataset):
                         list_box_labels = []
                         cc = 1
                         for idx, name in enumerate(self.label_types):
+                            # print(idx,name)
                             filtered_ids = filter_labels(anno[name+'_ids'], final_annots['all_'+name+'_labels'], final_annots[name+'_labels'])
                             list_box_labels.append(filtered_ids)
                             for fid in filtered_ids:
@@ -668,7 +674,8 @@ class VideoDataset(tutils.data.Dataset):
                         for k, bls in enumerate(list_box_labels):
                             for l in bls:
                                 counts[l, k] += 1 
-
+                    # print(videoname,frame_num)
+                    # print(rr)
                     all_labels = np.asarray(all_labels, dtype=np.float32)
                     all_boxes = np.asarray(all_boxes, dtype=np.float32)
 
@@ -681,9 +688,9 @@ class VideoDataset(tutils.data.Dataset):
             frame_level_list.append(frame_level_annos)  
 
             ## make ids
-            start_frames = [ f for f in range(numf-self.MIN_SEQ_STEP*self.SEQ_LEN, -1,  -self.skip_step)]
-            if self.full_test and 0 not in start_frames:
-                start_frames.append(0)
+            start_frames = [ f for f in range(numf-self.MIN_SEQ_STEP*self.SEQ_LEN, 1,  -self.skip_step)]
+            if self.full_test and 1 not in start_frames:
+                start_frames.append(1)
             logger.info('number of start frames: '+ str(len(start_frames)))
             for frame_num in start_frames:
                 step_list = [s for s in range(self.MIN_SEQ_STEP, self.MAX_SEQ_STEP+1) if numf-s*self.SEQ_LEN>=frame_num]
@@ -775,7 +782,7 @@ class VideoDataset(tutils.data.Dataset):
                         box = anno['box']
                         
                         assert box[0]<box[2] and box[1]<box[3], box
-                        assert width==1280 and height==960, (width, height, box)
+                        assert width==1920 and height==1280, (width, height, box)
 
                         for bi in range(4):
                             assert 0<=box[bi]<=1.01, box
@@ -812,9 +819,9 @@ class VideoDataset(tutils.data.Dataset):
             frame_level_list.append(frame_level_annos)  
 
             ## make ids
-            start_frames = [ f for f in range(numf-self.MIN_SEQ_STEP*self.SEQ_LEN, -1,  -self.skip_step)]
-            if self.full_test and 0 not in start_frames:
-                start_frames.append(0)
+            start_frames = [ f for f in range(numf-self.MIN_SEQ_STEP*self.SEQ_LEN, 1,  -self.skip_step)]
+            if self.full_test and 1 not in start_frames:
+                start_frames.append(1)
             logger.info('number of start frames: '+ str(len(start_frames)))
             for frame_num in start_frames:
                 step_list = [s for s in range(self.MIN_SEQ_STEP, self.MAX_SEQ_STEP+1) if numf-s*self.SEQ_LEN>=frame_num]
@@ -864,7 +871,7 @@ class VideoDataset(tutils.data.Dataset):
             indexs.append(frame_num)
             if self.DATASET != 'ava':
                 img_name = self._imgpath + '/{:s}/{:05d}.jpg'.format(videoname, frame_num)
-                img_name = self._imgpath + '/{:s}/img_{:05d}.jpg'.format(videoname, frame_num)
+                # img_name = self._imgpath + '/{:s}/img_{:05d}.jpg'.format(videoname, frame_num)
             elif self.DATASET == 'ava':
                 img_name = self._imgpath + '/{:s}/{:s}_{:06d}.jpg'.format(videoname, videoname, frame_num)
 
