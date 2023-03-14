@@ -9,6 +9,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch, pdb, time
 from modules import box_utils
+from requirements_modules.req_losses import logical_requirements_loss
 
 
 # Credits:: from https://github.com/facebookresearch/maskrcnn-benchmark/blob/master/maskrcnn_benchmark/layers/smooth_l1_loss.py
@@ -62,7 +63,7 @@ class FocalLoss(nn.Module):
         self.gamma = 2.0
 
 
-    def forward(self, confidence, predicted_locations, gt_boxes, gt_labels, counts, anchors, ego_preds, ego_labels):
+    def forward(self, confidence, predicted_locations, gt_boxes, gt_labels, counts, anchors, ego_preds, ego_labels, logic, Cplus, Cminus):
         ## gt_boxes, gt_labels, counts, ancohor_boxes
         
         """
@@ -162,4 +163,8 @@ class FocalLoss(nn.Module):
         #     ego_loss = sigmoid_focal_loss(masked_preds, one_hot_labels, one_hot_labels.shape[0], self.alpha, self.gamma)
         
         # print(regression_loss, cls_loss, ego_loss)
-        return regression_loss, cls_loss/8.0 #+ ego_loss/4.0
+        if logic is None:
+            return regression_loss, cls_loss/8.0  # + ego_loss/4.0
+        else:
+            logic_based_loss = logical_requirements_loss(masked_preds, logic, Cplus, Cminus)
+            return regression_loss, cls_loss/8.0, logic_based_loss

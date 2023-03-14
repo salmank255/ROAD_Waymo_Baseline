@@ -85,7 +85,7 @@ class RetinaNet(nn.Module):
         nn.init.constant_(self.ego_head.bias, bias_value)
 
 
-    def forward(self, images, gt_boxes=None, gt_labels=None, ego_labels=None, counts=None, img_indexs=None, get_features=False):
+    def forward(self, images, gt_boxes=None, gt_labels=None, ego_labels=None, counts=None, img_indexs=None, get_features=False, logic=None, Cplus=None, Cminus=None):
         sources, ego_feat = self.backbone(images)
         
         ego_preds = self.ego_head(
@@ -111,7 +111,7 @@ class RetinaNet(nn.Module):
         if get_features:  # testing mode with feature return
             return flat_conf, features
         elif gt_boxes is not None:  # training mode
-            return self.criterion(flat_conf, flat_loc, gt_boxes, gt_labels, counts, ancohor_boxes, ego_preds, ego_labels)
+            return self.criterion(flat_conf, flat_loc, gt_boxes, gt_labels, counts, ancohor_boxes, ego_preds, ego_labels, logic, Cplus, Cminus)
         else:  # otherwise testing mode
             decoded_boxes = []
             for b in range(flat_loc.shape[0]):
