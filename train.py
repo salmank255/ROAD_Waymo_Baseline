@@ -9,6 +9,8 @@ import torch.utils.data as data_utils
 from modules import  AverageMeter
 from data import custum_collate
 from modules.solver import get_optim
+from requirements_modules.constants import CONSTRAINTS_PATH, NUM_LABELS, NUM_REQ
+from requirements_modules.req_handler import createIs, createMs
 from val import validate
 from modules import utils
 logger = utils.get_logger(__name__)
@@ -90,8 +92,46 @@ def run_train(args, train_data_loader, net, optimizer, epoch, iteration):
     losses = AverageMeter()
     loc_losses = AverageMeter()
     cls_losses = AverageMeter()
+    req_losses = AverageMeter()
     torch.cuda.synchronize()
     start = time.perf_counter()
+
+
+    if args.LOGIC is not None:
+        # Read constraints from file and create the Ms and Is matrices
+        Iplus_np, Iminus_np = createIs(CONSTRAINTS_PATH, NUM_LABELS)
+        Mplus_np, Mminus_np = createMs(CONSTRAINTS_PATH, NUM_LABELS)
+
+        Iplus, Iminus = torch.from_numpy(Iplus_np).float(), torch.from_numpy(Iminus_np).float()
+        Mplus, Mminus = torch.from_numpy(Mplus_np).float(), torch.from_numpy(Mminus_np).float()
+
+        if args.LOGIC == "Product":
+            # These are already the negated literals
+            # matrix of negative appearances in the conjunction
+            Cminus = Iminus + torch.transpose(Mplus, 0, 1)
+            # matrix of positive appearances in the conjunction
+            Cplus = Iplus + torch.transpose(Mminus, 0, 1)
+        else: # elif args.LOGIC == "Godel" or args.LOGIC == "Lukasiewicz":
+            # These are the literals as they appear in the disjunction
+            # Matrix of the positive appearances in the disjunction
+            Cplus = Iminus + torch.transpose(Mplus, 0, 1)
+            # matrix of negative appearances in the conjunction
+            Cminus = Iplus + torch.transpose(Mminus, 0, 1)
+
+        if args.MULTI_GPUS:
+            # Since we are splitting the foarward call on multiple GPUs, whatever we pass to the forward call
+            # gets splitted along the 0 dimension. In order to have a replication and not a splitting we replicate
+            # the matrices along the newly generated dimension 0.
+            # Iplus, Iminus = Iplus.unsqueeze(0), Iminus.unsqueeze(0)
+            # Mplus, Mminus = Mplus.unsqueeze(0), Mminus.unsqueeze(0)
+            Cplus, Cminus = Cplus.unsqueeze(0), Cminus.unsqueeze(0)
+
+            # Iplus = Iplus.expand(torch.cuda.device_count(), NUM_REQ, NUM_LABELS)
+            # Iminus = Iminus.expand(torch.cuda.device_count(), NUM_REQ, NUM_LABELS)
+            # Mplus = Mplus.expand(torch.cuda.device_count(), NUM_LABELS, NUM_REQ)
+            # Mminus = Mminus.expand(torch.cuda.device_count(), NUM_LABELS, NUM_REQ)
+            Cplus = Cplus.expand(torch.cuda.device_count(), NUM_REQ, NUM_LABELS)
+            Cminus = Cminus.expand(torch.cuda.device_count(), NUM_REQ, NUM_LABELS)
 
     for internel_iter, (images, gt_boxes, gt_labels, ego_labels, counts, img_indexs, wh) in enumerate(train_data_loader):
         iteration += 1
@@ -102,6 +142,15 @@ def run_train(args, train_data_loader, net, optimizer, epoch, iteration):
         gt_labels = gt_labels.cuda(0, non_blocking=True)
         counts = counts.cuda(0, non_blocking=True)
         ego_labels = ego_labels.cuda(0, non_blocking=True)
+
+        if args.LOGIC is not None:
+            # Iplus = Iplus.cuda(0, non_blocking=True)
+            # Iminus = Iminus.cuda(0, non_blocking=True)
+            # Mplus = Mplus.cuda(0, non_blocking=True)
+            # Mminus = Mminus.cuda(0, non_blocking=True)
+            Cplus = Cplus.cuda(0, non_blocking=True)
+            Cminus = Cminus.cuda(0, non_blocking=True)
+
         # forward
         torch.cuda.synchronize()
         data_time.update(time.perf_counter() - start)
@@ -109,9 +158,27 @@ def run_train(args, train_data_loader, net, optimizer, epoch, iteration):
         # print(images.size(), anchors.size())
         optimizer.zero_grad()
         # pdb.set_trace()
-        loss_l, loss_c = net(images, gt_boxes, gt_labels, ego_labels, counts, img_indexs)
-        loss_l, loss_c = loss_l.mean(), loss_c.mean()
-        loss = loss_l + loss_c
+
+        #######################################
+        if args.LOGIC is None:
+            loss_l, loss_c = net(images, gt_boxes, gt_labels, ego_labels, counts, img_indexs)
+            # Mean over the losses computed on the different GPUs
+            loss_l, loss_c = loss_l.mean(), loss_c.mean()
+            loss = loss_l + loss_c
+        else:
+            loss_l, loss_c, loss_r = net(images, gt_boxes, gt_labels, ego_labels, counts, img_indexs,
+                                         logic=args.LOGIC, Cplus=Cplus, Cminus=Cminus)
+            # Mean over the losses computed on the different GPUs
+            loss_l, loss_c, loss_r = loss_l.mean(), loss_c.mean(), loss_r.mean()
+
+            # If a t-norm is used, the regularisation term <req_loss> gives the
+            # degree of constraint satisfaction of the neural predictions w.r.t. that t-norm.
+            # To customise this term, changes should be made in the method
+            # <logical_requirements_loss> (found in <modules/req_losses.py>),
+            # which is called in the forward method of the
+            # <FocalLoss> class (found in <modules/detection_loss.py>).
+            loss = loss_l + loss_c + args.req_loss_weight * loss_r
+        #######################################
 
         loss.backward()
         optimizer.step()
@@ -129,7 +196,16 @@ def run_train(args, train_data_loader, net, optimizer, epoch, iteration):
         
         loc_losses.update(loc_loss)
         cls_losses.update(conf_loss)
-        losses.update((loc_loss + conf_loss)/2.0)
+
+        if args.LOGIC is None:
+            # losses.update((loc_loss + conf_loss) / 2.0)
+            losses.update(loc_loss + conf_loss)
+        else:
+            req_loss = req_loss.item()
+            req_losses.update(req_loss)
+            losses.update(
+                loc_loss.item() + conf_loss.item() + req_loss.item())  # do not multiply by req weight, so exp are comparable
+
 
         torch.cuda.synchronize()
         batch_time.update(time.perf_counter() - start)
@@ -140,13 +216,15 @@ def run_train(args, train_data_loader, net, optimizer, epoch, iteration):
                 loss_group = dict()
                 loss_group['Classification'] = cls_losses.val
                 loss_group['Localisation'] = loc_losses.val
+                loss_group['Requirements'] = req_losses.val
                 loss_group['Overall'] = losses.val
                 args.sw.add_scalars('Losses', loss_group, iteration)
 
-            print_line = 'Itration [{:d}/{:d}]{:06d}/{:06d} loc-loss {:.2f}({:.2f}) cls-loss {:.2f}({:.2f}) ' \
+            print_line = 'Itration [{:d}/{:d}]{:06d}/{:06d} loc-loss {:.2f}({:.2f}) cls-loss {:.2f}({:.2f}) req-loss {:.2f}({:.2f})' \
                         'average-loss {:.2f}({:.2f}) DataTime {:0.2f}({:0.2f}) Timer {:0.2f}({:0.2f})'.format( epoch, 
                         args.MAX_EPOCHS, iteration, args.MAX_ITERS, loc_losses.val, loc_losses.avg, cls_losses.val,
-                        cls_losses.avg, losses.val, losses.avg, 10*data_time.val, 10*data_time.avg, 10*batch_time.val, 10*batch_time.avg)
+                        cls_losses.avg, req_losses.val, req_losses.avg,
+                        losses.val, losses.avg, 10*data_time.val, 10*data_time.avg, 10*batch_time.val, 10*batch_time.avg)
 
             logger.info(print_line)
             if internel_iter % (args.LOG_STEP*20) == 0:
