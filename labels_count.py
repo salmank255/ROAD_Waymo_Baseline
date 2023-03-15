@@ -2,9 +2,20 @@
 import json
 import numpy as np
 
+import xlsxwriter
+ 
+workbook = xlsxwriter.Workbook('label_count.xlsx')
+ 
+# By default worksheet names in the spreadsheet will be
+# Sheet1, Sheet2 etc., but we can also specify a name.
+worksheet = workbook.add_worksheet("My sheet")
+
 
 road_trainval_path = '../roadpp/road_plus_plus_trainval_v1.0.json'
 road_test_path = '../roadpp/road_plus_plus_test_v1.0.json'
+
+row = 0
+col = 0
 
 # for d_path in [road_trainval_path,road_test_path]:
 #     with open(d_path,'r') as fff:
@@ -49,9 +60,14 @@ for d_path in [road_trainval_path,road_test_path]:
                         agent_labs[agn] += 1
 
     print("All agent labs:", d_path)
+    worksheet.write(row, col, d_path)
+    row += 1    
     print("Total labels:", sum(agent_labs))
     for i in range(len(agent_labs)):
         print(agents[i] +" : "+ str(agent_labs[i]))
+        worksheet.write(row, col, agents[i])
+        worksheet.write(row, col + 1, str(agent_labs[i]))
+        row += 1
 
 
 # action labels count
@@ -73,10 +89,14 @@ for d_path in [road_trainval_path,road_test_path]:
                         action_labs[actn] += 1
 
     print("All actions labs:", d_path)
+    worksheet.write(row, col, d_path)
+    row += 1  
     print("Total labels:", sum(action_labs))
     for i in range(len(action_labs)):
         print(actions[i] +" : "+ str(action_labs[i]))
-
+        worksheet.write(row, col, actions[i])
+        worksheet.write(row, col + 1, str(action_labs[i]))
+        row += 1
 
 # location labels count
 
@@ -96,10 +116,14 @@ for d_path in [road_trainval_path,road_test_path]:
                         loc_labs[loc] += 1
 
     print("All location labs:", d_path)
+    worksheet.write(row, col, d_path)
+    row += 1  
     print("Total labels:", sum(loc_labs))
     for i in range(len(loc_labs)):
         print(locs[i] +" : "+ str(loc_labs[i]))
-
+        worksheet.write(row, col, locs[i])
+        worksheet.write(row, col + 1, str(loc_labs[i]))
+        row += 1
 
 
 # duplex labels count
@@ -121,11 +145,16 @@ for d_path in [road_trainval_path,road_test_path]:
                         dup_labs[dup] += 1
 
     print("All duplex labs:", d_path)
+    worksheet.write(row, col, d_path)
+    row += 1  
     print("Total labels:", sum(dup_labs))
     for i in range(len(dup_labs)):
-        if dup_labs[i] >0:
+        if dup_labs[i] >500:
             print(dups[i] +" : "+ str(dup_labs[i]))
             dup_final_list.append(dups[i])
+            worksheet.write(row, col, dups[i])
+            worksheet.write(row, col + 1, str(dup_labs[i]))
+            row += 1
 
     print(dup_final_list)
 
@@ -149,10 +178,17 @@ for d_path in [road_trainval_path,road_test_path]:
                         trip_labs[trip] += 1
 
     print("All triplet labs:", d_path)
+    worksheet.write(row, col, d_path)
+    row += 1  
     print("Total labels:", sum(trip_labs))
     for i in range(len(trip_labs)):
-        if trip_labs[i] >0:
+        if trip_labs[i] >500:
             print(trips[i] +" : "+ str(trip_labs[i]))
             trip_final_list.append(trips[i])
+            worksheet.write(row, col, trips[i])
+            worksheet.write(row, col + 1, str(trip_labs[i]))
+            row += 1
 
     print(trip_final_list)
+
+workbook.close()

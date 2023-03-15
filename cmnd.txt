@@ -20,4 +20,6 @@ python main.py ../ ../ kinetics-pt/ --MODE=gen_dets --ARCH=resnet50 --MODEL_TYPE
 
 
 
+visulisation
 
+python gt_vis.py ../ ../ kinetics-pt/ --MODE=gen_dets --ARCH=resnet50 --MODEL_TYPE=SlowFast --DATASET=roadpp --TEST_SEQ_LEN=8 --TRAIN_SUBSETS=train --TEST_SUBSETS=test --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=1 --LR=0.0011
