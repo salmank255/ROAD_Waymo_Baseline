@@ -465,7 +465,7 @@ def get_gt_frames_ava(final_annots, label_type):
                     for bi in range(4):
                         assert 0<=box[bi]<=1.01, box
                         box[bi] = min(1.0, max(0, box[bi]))
-                        box[bi] = box[bi]*682 if bi % 2 == 0 else box[bi]*512
+                        box[bi] = box[bi]*691 if bi % 2 == 0 else box[bi]*461
                     
                     box = np.asarray(box)
 

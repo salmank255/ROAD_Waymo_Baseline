@@ -9,7 +9,7 @@ import argparse
 import numpy as np
 from modules import utils
 from train import train
-from data import VideoDataset
+from data.inference_dataset import VideoDataset, custum_collate, get_gt_video_list, get_video_tubes
 from torchvision import transforms
 import data.transforms as vtf
 from models.retinanet import build_retinanet
@@ -17,7 +17,7 @@ from gen_dets import gen_dets, eval_framewise_dets
 from tubes import build_eval_tubes
 from val import val
 import torch.utils.data as data_utils
-from data import custum_collate
+# from data import custum_collate
 
 def str2bool(v):
     return v.lower() in ("yes", "true", "t", "1")
@@ -249,7 +249,7 @@ def main():
         elif args.MODEL_TYPE != 'C2D':
             args.skip_beggning = 2
 
-        skip_step = args.SEQ_LEN - args.skip_beggning
+        skip_step = args.SEQ_LEN
 
     
 
@@ -272,6 +272,8 @@ def main():
     args.num_ego_classes = val_dataset.num_ego_classes
     args.ego_classes = val_dataset.ego_classes
     args.head_size = 256
+
+
     # olympia_classes = val_dataset.olympia_classes
 
     # if args.MODE in ['train', 'val','test','gen_dets']:
@@ -305,32 +307,32 @@ def main():
 
             for gb in range(len(gt_targets[0][s])):
                 gt_box = gt_boxes[0][s][gb]
-                
-                gt_agent_ind = np.where(gt_targets[0][s][gb][1:11].numpy().astype(int)==1)[0]
+
+                gt_agent_ind = np.where(gt_targets[0][s][gb][1:9].numpy().astype(int)==1)[0]
                 gt_agent = ''
                 for acc in range(len(gt_agent_ind)):
                     gt_agent = gt_agent+'_'+args.all_classes[1][gt_agent_ind[acc]]
-                gt_action_ind = np.where(gt_targets[0][s][gb][11:30].numpy().astype(int)==1)[0]
+                gt_action_ind = np.where(gt_targets[0][s][gb][9:28].numpy().astype(int)==1)[0]
                 gt_action = ''
                 for acc in range(len(gt_action_ind)):
                     gt_action = gt_action+'_'+args.all_classes[2][gt_action_ind[acc]]
-                gt_location_ind = np.where(gt_targets[0][s][gb][30:42].numpy().astype(int)==1)[0]
+                gt_location_ind = np.where(gt_targets[0][s][gb][28:44].numpy().astype(int)==1)[0]
                 gt_location = ''
                 for acc in range(len(gt_location_ind)):
                     gt_location = gt_location+'_'+args.all_classes[3][gt_location_ind[acc]]
-                gt_dup_ind = np.where(gt_targets[0][s][gb][42:81].numpy().astype(int)==1)[0]
+                gt_dup_ind = np.where(gt_targets[0][s][gb][44:87].numpy().astype(int)==1)[0]
                 gt_dup = ''
                 for acc in range(len(gt_dup_ind)):
                     gt_dup = gt_dup+'_'+args.all_classes[4][gt_dup_ind[acc]]
-                gt_trip_ind = np.where(gt_targets[0][s][gb][81:149].numpy().astype(int)==1)[0]
+                gt_trip_ind = np.where(gt_targets[0][s][gb][87:169].numpy().astype(int)==1)[0]
                 gt_trip = ''
                 for acc in range(len(gt_trip_ind)):
                     gt_trip = gt_trip+'_'+args.all_classes[5][gt_trip_ind[acc]]
 
-                gt_box[0] = (gt_box[0]/682)*org_width # width x1
-                gt_box[2] = (gt_box[2]/682)*org_width # width x2
-                gt_box[1] = (gt_box[1]/512)*org_height # height y1
-                gt_box[3] = (gt_box[3]/512)*org_height # height y2
+                gt_box[0] = (gt_box[0]/691)*org_width # width x1
+                gt_box[2] = (gt_box[2]/691)*org_width # width x2
+                gt_box[1] = (gt_box[1]/461)*org_height # height y1
+                gt_box[3] = (gt_box[3]/461)*org_height # height y2
 
 
                 # print(int(boxes[bb][0]), int(boxes[bb][1]),int(boxes[bb][2]), int(boxes[bb][3]))
@@ -340,7 +342,7 @@ def main():
                 cv2.putText(image, gt_location, (int(gt_box[0]), int(gt_box[1]-60)), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (36,255,12), 2)
                 cv2.putText(image, gt_dup, (int(gt_box[0]), int(gt_box[1]-40)), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (36,255,12), 2)
                 cv2.putText(image, gt_trip, (int(gt_box[0]), int(gt_box[1]-20)), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (36,255,12), 2)
-                video.write(image)
+            video.write(image)
     video.release()
         
                     

@@ -110,7 +110,7 @@ def get_box(box, counts):
         # if add_one ==0:
         box[bi] = min(1.0, max(0, box[bi]))
         if counts is None:
-            box[bi] = box[bi]*682 if bi % 2 == 0 else box[bi]*512
+            box[bi] = box[bi]*691 if bi % 2 == 0 else box[bi]*691
 
     return box, counts
 
@@ -270,7 +270,7 @@ def get_filtered_tubes(label_key, final_annots, videoname):
                     for bi in range(4):
                         assert 0<=box[bi]<=1.01, box
                         box[bi] = min(1.0, max(0, box[bi]))
-                        box[bi] = box[bi]*682 if bi % 2 == 0 else box[bi]*512
+                        box[bi] = box[bi]*691 if bi % 2 == 0 else box[bi]*691
                     boxes.append(box)
             else:
                 for fn in tube['frames']:
@@ -304,7 +304,7 @@ def get_filtered_frames(label_key, final_annots, videoname, filtered_gts):
                     for bi in range(4):
                         assert 0<=box[bi]<=1.01, box
                         box[bi] = min(1.0, max(0, box[bi]))
-                        box[bi] = box[bi]*682 if bi % 2 == 0 else box[bi]*512
+                        box[bi] = box[bi]*691 if bi % 2 == 0 else box[bi]*461
                     if label_key == 'agent_ness':
                         filtered_ids = [0]
                     else:
