@@ -131,3 +131,6 @@ dmypy.json
 *.tar
 *.pth
 logs/*
+
+*.MP4
+*.xlsx

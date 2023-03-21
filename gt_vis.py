@@ -1,3 +1,6 @@
+import cv2
+from PIL import Image
+
 
 import os
 import sys
@@ -6,16 +9,27 @@ import argparse
 import numpy as np
 from modules import utils
 from train import train
-from data import VideoDataset
+from data.inference_dataset import VideoDataset, custum_collate, get_gt_video_list, get_video_tubes
 from torchvision import transforms
 import data.transforms as vtf
 from models.retinanet import build_retinanet
 from gen_dets import gen_dets, eval_framewise_dets
 from tubes import build_eval_tubes
 from val import val
+import torch.utils.data as data_utils
+# from data import custum_collate
 
 def str2bool(v):
     return v.lower() in ("yes", "true", "t", "1")
+
+def set_out_video(video_name):
+    fps = 10
+    video_width = 1920
+    video_height = 1280
+    size = (video_width, video_height)
+    fourcc = cv2.VideoWriter_fourcc(*"XVID")
+    video = cv2.VideoWriter(video_name, fourcc, fps, size)
+    return video
 
 
 def main():
@@ -23,7 +37,7 @@ def main():
     parser.add_argument('DATA_ROOT', help='Location to root directory for dataset reading') # /mnt/mars-fast/datasets/
     parser.add_argument('SAVE_ROOT', help='Location to root directory for saving checkpoint models') # /mnt/mars-alpha/
     parser.add_argument('MODEL_PATH',help='Location to root directory where kinetics pretrained models are stored')
-    parser.add_argument('--ANNO_ROOT', default='', help='Location to directory where annotations are stored') # /mnt/mars-fast/datasets/
+    
     parser.add_argument('--MODE', default='train',
                         help='MODE can be train, gen_dets, eval_frames, eval_tubes define SUBSETS accordingly, build tubes')
     # Name of backbone network, e.g. resnet18, resnet34, resnet50, resnet101 resnet152 are supported
@@ -56,14 +70,14 @@ def main():
     #  Name of the dataset only voc or coco are supported
     parser.add_argument('--DATASET', default='road', 
                         type=str,help='dataset being used')
-    parser.add_argument('--TRAIN_SUBSETS', default='train,', 
+    parser.add_argument('--TRAIN_SUBSETS', default='train_3,', 
                         type=str,help='Training SUBSETS seprated by ,')
-    parser.add_argument('--VAL_SUBSETS', default='val', 
+    parser.add_argument('--VAL_SUBSETS', default='', 
                         type=str,help='Validation SUBSETS seprated by ,')
     parser.add_argument('--TEST_SUBSETS', default='', 
                         type=str,help='Testing SUBSETS seprated by ,')
     # Input size of image only 600 is supprted at the moment 
-    parser.add_argument('--MIN_SIZE', default=960, 
+    parser.add_argument('--MIN_SIZE', default=512, 
                         type=int, help='Input Size for FPN')
     
     #  data loading argumnets
@@ -106,17 +120,17 @@ def main():
     # Evaluation hyperparameters
     parser.add_argument('--EVAL_EPOCHS', default='30', 
                         type=str, help='eval epochs to test network on these epoch checkpoints usually the last epoch is used')
-    parser.add_argument('--VAL_STEP', default=1, 
+    parser.add_argument('--VAL_STEP', default=2, 
                         type=int, help='Number of training epoch before evaluation')
     parser.add_argument('--IOU_THRESH', default=0.5, 
                         type=float, help='Evaluation threshold for validation and for frame-wise mAP')
-    parser.add_argument('--CONF_THRESH', default=0.025, 
+    parser.add_argument('--CONF_THRESH', default=0.5, 
                         type=float, help='Confidence threshold for to remove detection below given number')
     parser.add_argument('--NMS_THRESH', default=0.5, 
                         type=float, help='NMS threshold to apply nms at the time of validation')
     parser.add_argument('--TOPK', default=10, 
                         type=int, help='topk detection to keep for evaluation')
-    parser.add_argument('--GEN_CONF_THRESH', default=0.025, 
+    parser.add_argument('--GEN_CONF_THRESH', default=0.5, 
                         type=float, help='Confidence threshold at the time of generation and dumping')
     parser.add_argument('--GEN_TOPK', default=100, 
                         type=int, help='topk at the time of generation')
@@ -169,15 +183,12 @@ def main():
                         type=int, help='manualseed for reproduction')
     parser.add_argument('--MULTI_GPUS', default=True, type=str2bool, help='If  more than 0 then use all visible GPUs by default only one GPU used ') 
 
-    parser.add_argument('--LOGIC', default=None, type=str, help='t-norm to be used in the loss')
-    parser.add_argument('--req_loss_weight', default=1.0, type=float, help='weight for the logic-based loss')
-
     # Use CUDA_VISIBLE_DEVICES=0,1,4,6 to select GPUs to use
 
 
     ## Parse arguments
     args = parser.parse_args()
-
+    
     args = utils.set_args(args) # set directories and SUBSETS fo datasets
     args.MULTI_GPUS = False if args.BATCH_SIZE == 1 else args.MULTI_GPUS
     ## set random seeds and global settings
@@ -192,13 +203,17 @@ def main():
     logger = utils.get_logger(__name__)
     logger.info(sys.version)
 
-    assert args.MODE in ['train','val','gen_dets','eval_frames', 'eval_tubes'], 'MODE must be from ' + ','.join(['train','test','tubes'])
+    assert args.MODE in ['train','val','test','gen_dets','eval_frames', 'eval_tubes'], 'MODE must be from ' + ','.join(['train','test','tubes'])
 
     if args.MODE == 'train':
         args.TEST_SEQ_LEN = args.SEQ_LEN
     else:
         args.SEQ_LEN = args.TEST_SEQ_LEN
 
+    ttransform = transforms.Compose([
+                        vtf.ResizeClip(args.MIN_SIZE, args.MAX_SIZE),
+                        vtf.ToTensorStack(),
+                        vtf.Normalize(mean=args.MEANS, std=args.STDS)])
     if args.MODE in ['train','val']:
         # args.CONF_THRESH = 0.05
         args.SUBSETS = args.TRAIN_SUBSETS
@@ -210,7 +225,6 @@ def main():
         # train_skip_step = args.SEQ_LEN
         # if args.SEQ_LEN>4 and args.SEQ_LEN<=10:
         #     train_skip_step = args.SEQ_LEN-2
-
         if args.SEQ_LEN>10:
             train_skip_step = args.SEQ_LEN + (args.MAX_SEQ_STEP - 1) * 2 - 2
         else:
@@ -221,7 +235,7 @@ def main():
         ## For validation set
         full_test = False
         args.SUBSETS = args.VAL_SUBSETS
-        skip_step = args.SEQ_LEN*4
+        skip_step = args.SEQ_LEN*8
     else:
         args.SEQ_LEN = args.TEST_SEQ_LEN
         args.MAX_SEQ_STEP = 1
@@ -229,14 +243,15 @@ def main():
         full_test = True #args.MODE != 'train'
         args.skip_beggning = 0
         args.skip_ending = 0
-        if args.MODEL_TYPE == 'I3D' or 'SlowFast':
+        if args.MODEL_TYPE == 'I3D':
             args.skip_beggning = 2
             args.skip_ending = 2
         elif args.MODEL_TYPE != 'C2D':
             args.skip_beggning = 2
 
-        skip_step = args.SEQ_LEN - args.skip_beggning
+        skip_step = args.SEQ_LEN
 
+    
 
     val_transform = transforms.Compose([ 
                         vtf.ResizeClip(args.MIN_SIZE, args.MAX_SIZE),
@@ -247,6 +262,7 @@ def main():
     val_dataset = VideoDataset(args, train=False, transform=val_transform, skip_step=skip_step, full_test=full_test)
     logger.info('Done Loading Dataset Validation Dataset')
 
+
     args.num_classes =  val_dataset.num_classes
     # one for objectness
     args.label_types = val_dataset.label_types
@@ -256,33 +272,79 @@ def main():
     args.num_ego_classes = val_dataset.num_ego_classes
     args.ego_classes = val_dataset.ego_classes
     args.head_size = 256
-    if args.MODE in ['train', 'val','gen_dets']:
-        net = build_retinanet(args).cuda()
-        if args.MULTI_GPUS:
-            logger.info('\nLets do dataparallel\n')
-            net = torch.nn.DataParallel(net)
 
-    for arg in sorted(vars(args)):
-        logger.info(str(arg)+': '+str(getattr(args, arg)))
-    
-    if args.MODE == 'train':
-        if args.FBN:
-            if args.MULTI_GPUS:
-                net.module.backbone.apply(utils.set_bn_eval)
-            else:
-                net.backbone.apply(utils.set_bn_eval)
-        train(args, net, train_dataset, val_dataset)
-    elif args.MODE == 'val':
-        val(args, net, val_dataset)
-    elif args.MODE == 'gen_dets':
-        gen_dets(args, net, val_dataset)
-        eval_framewise_dets(args, val_dataset)
-        build_eval_tubes(args, val_dataset)
-    elif args.MODE == 'eval_frames':
-        eval_framewise_dets(args, val_dataset)
-    elif args.MODE == 'eval_tubes':
-        build_eval_tubes(args, val_dataset)
-    
 
+    # olympia_classes = val_dataset.olympia_classes
+
+    # if args.MODE in ['train', 'val','test','gen_dets']:
+    #     net = build_retinanet(args).cuda()
+    #     logger.info('\nLets do dataparallel\n')
+    #     net = torch.nn.DataParallel(net)
+
+
+    # net.eval()
+    # args.MODEL_PATH = args.SAVE_ROOT + 'model_{:06d}.pth'.format(args.EVAL_EPOCHS[0])
+    # logger.info('Loaded model from :: '+args.MODEL_PATH)
+    # net.load_state_dict(torch.load(args.MODEL_PATH))
+
+    val_data_loader = data_utils.DataLoader(val_dataset, 1, num_workers=args.NUM_WORKERS,
+                                            shuffle=False, pin_memory=True, collate_fn=custum_collate)
+
+    video = set_out_video('ROAD_test_vid_'+str(args.GEN_CONF_THRESH)+'_.MP4')
+    # activation = torch.nn.Sigmoid().cuda()
+    # with torch.no_grad():
+    for val_itr, (images, gt_boxes, gt_targets, ego_labels, batch_counts, img_indexs, wh,videonames,start_frames,img_names) in enumerate(val_data_loader):
+
+        
+        print(val_itr)
+        images = images.cuda(0, non_blocking=True)
+
+        for s in range(args.SEQ_LEN):
+            image = cv2.imread(img_names[0][s])
+            # image = cv2.resize(image,(width,height))
+            org_height,org_width = image.shape[:2]
+            cc = 0
+
+            for gb in range(len(gt_targets[0][s])):
+                gt_box = gt_boxes[0][s][gb]
+
+                gt_agent_ind = np.where(gt_targets[0][s][gb][1:9].numpy().astype(int)==1)[0]
+                gt_agent = ''
+                for acc in range(len(gt_agent_ind)):
+                    gt_agent = gt_agent+'_'+args.all_classes[1][gt_agent_ind[acc]]
+                gt_action_ind = np.where(gt_targets[0][s][gb][9:28].numpy().astype(int)==1)[0]
+                gt_action = ''
+                for acc in range(len(gt_action_ind)):
+                    gt_action = gt_action+'_'+args.all_classes[2][gt_action_ind[acc]]
+                gt_location_ind = np.where(gt_targets[0][s][gb][28:44].numpy().astype(int)==1)[0]
+                gt_location = ''
+                for acc in range(len(gt_location_ind)):
+                    gt_location = gt_location+'_'+args.all_classes[3][gt_location_ind[acc]]
+                gt_dup_ind = np.where(gt_targets[0][s][gb][44:87].numpy().astype(int)==1)[0]
+                gt_dup = ''
+                for acc in range(len(gt_dup_ind)):
+                    gt_dup = gt_dup+'_'+args.all_classes[4][gt_dup_ind[acc]]
+                gt_trip_ind = np.where(gt_targets[0][s][gb][87:169].numpy().astype(int)==1)[0]
+                gt_trip = ''
+                for acc in range(len(gt_trip_ind)):
+                    gt_trip = gt_trip+'_'+args.all_classes[5][gt_trip_ind[acc]]
+
+                gt_box[0] = (gt_box[0]/691)*org_width # width x1
+                gt_box[2] = (gt_box[2]/691)*org_width # width x2
+                gt_box[1] = (gt_box[1]/461)*org_height # height y1
+                gt_box[3] = (gt_box[3]/461)*org_height # height y2
+
+
+                # print(int(boxes[bb][0]), int(boxes[bb][1]),int(boxes[bb][2]), int(boxes[bb][3]))
+                cv2.rectangle(image, (int(gt_box[0]), int(gt_box[1])), (int(gt_box[2]), int(gt_box[3])), (0, 255, 0), 2)
+                cv2.putText(image, gt_agent, (int(gt_box[0]), int(gt_box[1]-100)), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (36,255,12), 2)
+                cv2.putText(image, gt_action, (int(gt_box[0]), int(gt_box[1]-80)), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (36,255,12), 2)
+                cv2.putText(image, gt_location, (int(gt_box[0]), int(gt_box[1]-60)), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (36,255,12), 2)
+                cv2.putText(image, gt_dup, (int(gt_box[0]), int(gt_box[1]-40)), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (36,255,12), 2)
+                cv2.putText(image, gt_trip, (int(gt_box[0]), int(gt_box[1]-20)), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (36,255,12), 2)
+            video.write(image)
+    video.release()
+        
+                    
 if __name__ == "__main__":
     main()
