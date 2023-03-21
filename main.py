@@ -260,8 +260,8 @@ def main():
     args.num_label_types = val_dataset.num_label_types
     args.all_classes =  val_dataset.all_classes
     args.num_classes_list = val_dataset.num_classes_list
-    args.num_ego_classes = val_dataset.num_ego_classes
-    args.ego_classes = val_dataset.ego_classes
+    # args.num_ego_classes = val_dataset.num_ego_classes
+    # args.ego_classes = val_dataset.ego_classes
     args.head_size = 256
 
     ############################# START C-LAYER

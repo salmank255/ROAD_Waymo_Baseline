@@ -103,7 +103,8 @@ def perform_detection(args, net,  val_data_loader, val_dataset, iteration):
     nlt = 0
     processed_videos = []
     with torch.no_grad():
-        for val_itr, (images, gt_boxes, gt_targets, ego_labels, batch_counts, img_indexs, wh) in enumerate(val_data_loader):
+        # for val_itr, (images, gt_boxes, gt_targets, ego_labels, batch_counts, img_indexs, wh) in enumerate(val_data_loader):
+        for val_itr, (images, gt_boxes, gt_targets, batch_counts, img_indexs, wh, videonames, start_frames) in enumerate(val_data_loader):
 
             torch.cuda.synchronize()
             t1 = time.perf_counter()

@@ -83,7 +83,7 @@ class ResNetFPN(nn.Module):
             self.conv6 = conv3x3(2304, 256, stride=2, padding=1)  # P6
             self.conv7 = conv3x3(256, 256, stride=2, padding=1)  # P7
 
-            self.ego_lateral = conv3x3(512 * block.expansion,  256, stride=2, padding=0)
+            # self.ego_lateral = conv3x3(512 * block.expansion,  256, stride=2, padding=0)
             self.avg_pool = nn.AdaptiveAvgPool3d((None, 1, 1))
 
             self.lateral_layer1 = conv1x1(2304, 256)
@@ -97,7 +97,7 @@ class ResNetFPN(nn.Module):
             self.conv6 = conv3x3(512 * block.expansion, 256, stride=2, padding=1)  # P6
             self.conv7 = conv3x3(256, 256, stride=2, padding=1)  # P7
 
-            self.ego_lateral = conv3x3(512 * block.expansion,  256, stride=2, padding=0)
+            # self.ego_lateral = conv3x3(512 * block.expansion,  256, stride=2, padding=0)
             self.avg_pool = nn.AdaptiveAvgPool3d((None, 1, 1))
 
             self.lateral_layer1 = conv1x1(512 * block.expansion, 256)
@@ -191,7 +191,7 @@ class ResNetFPN(nn.Module):
             p6 = self.conv6(c5)
             p7 = self.conv7(F.relu(p6))
             features = [p3, p4, p5, p6, p7]
-            ego_feat = self.avg_pool(p7)
+            # ego_feat = self.avg_pool(p7)
             # if self.pool2 is not None:
             #     # for i in range(len(features)):
             #     #     features[i] = self._upsample_time(features[i])
@@ -220,12 +220,13 @@ class ResNetFPN(nn.Module):
             p6 = self.conv6(c5)
             p7 = self.conv7(F.relu(p6))
             features = [p3, p4, p5, p6, p7]
-            ego_feat = self.avg_pool(p7)
+            # ego_feat = self.avg_pool(p7)
             if self.pool2 is not None:
                 for i in range(len(features)):
                     features[i] = self._upsample_time(features[i])
-                ego_feat = self._upsample_time(ego_feat)
-        return features, ego_feat
+                # ego_feat = self._upsample_time(ego_feat)
+        return features
+        # return features, ego_feat
 
 
     def identity_state_dict(self):

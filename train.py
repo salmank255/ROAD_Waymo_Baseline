@@ -93,7 +93,9 @@ def run_train(args, train_data_loader, net, optimizer, epoch, iteration):
     torch.cuda.synchronize()
     start = time.perf_counter()
 
-    for internel_iter, (images, gt_boxes, gt_labels, ego_labels, counts, img_indexs, wh) in enumerate(train_data_loader):
+    # for internel_iter, (images, gt_boxes, gt_labels, ego_labels, counts, img_indexs, wh) in enumerate(train_data_loader):
+    for internel_iter, (images, gt_boxes, gt_labels, counts, img_indexs, wh, _, _) in enumerate(train_data_loader):
+
         iteration += 1
         # if internel_iter > 20:
         #     break
@@ -101,7 +103,7 @@ def run_train(args, train_data_loader, net, optimizer, epoch, iteration):
         gt_boxes = gt_boxes.cuda(0, non_blocking=True)
         gt_labels = gt_labels.cuda(0, non_blocking=True)
         counts = counts.cuda(0, non_blocking=True)
-        ego_labels = ego_labels.cuda(0, non_blocking=True)
+        # ego_labels = ego_labels.cuda(0, non_blocking=True)
         # forward
         torch.cuda.synchronize()
         data_time.update(time.perf_counter() - start)
@@ -109,7 +111,8 @@ def run_train(args, train_data_loader, net, optimizer, epoch, iteration):
         # print(images.size(), anchors.size())
         optimizer.zero_grad()
         # pdb.set_trace()
-        loss_l, loss_c = net(images, gt_boxes, gt_labels, ego_labels, counts, img_indexs)
+        # loss_l, loss_c = net(images, gt_boxes, gt_labels, ego_labels, counts, img_indexs)
+        loss_l, loss_c = net(images, gt_boxes, gt_labels, counts, img_indexs)
         loss_l, loss_c = loss_l.mean(), loss_c.mean()
         loss = loss_l + loss_c
 
@@ -163,8 +166,8 @@ def run_val(args, val_data_loader, val_dataset, net, epoch, iteration):
         tvs = time.perf_counter()
         
         mAP, ap_all, ap_strs = validate(args, net, val_data_loader, val_dataset, epoch)
-        label_types = args.label_types + ['ego_action']
-        all_classes = args.all_classes + [args.ego_classes]
+        label_types = args.label_types  # + ['ego_action']
+        all_classes = args.all_classes  # + [args.ego_classes]
         mAP_group = dict()
         
         for nlt in range(args.num_label_types+1):

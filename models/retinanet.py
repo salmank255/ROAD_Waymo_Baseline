@@ -86,16 +86,18 @@ class RetinaNet(nn.Module):
         if args.MODE == 'train':  # eval_iters only in test case
             self.criterion = FocalLoss(args)
 
-        self.ego_head = nn.Conv3d(self.head_size, args.num_ego_classes, kernel_size=(
-            3, 1, 1), stride=1, padding=(1, 0, 0))
-        nn.init.constant_(self.ego_head.bias, bias_value)
+        # self.ego_head = nn.Conv3d(self.head_size, args.num_ego_classes, kernel_size=(
+        #     3, 1, 1), stride=1, padding=(1, 0, 0))
+        # nn.init.constant_(self.ego_head.bias, bias_value)
 
 
-    def forward(self, images, gt_boxes=None, gt_labels=None, ego_labels=None, counts=None, img_indexs=None, get_features=False):
-        sources, ego_feat = self.backbone(images)
-        
-        ego_preds = self.ego_head(
-            ego_feat).squeeze(-1).squeeze(-1).permute(0, 2, 1).contiguous()
+    # def forward(self, images, gt_boxes=None, gt_labels=None, ego_labels=None, counts=None, img_indexs=None, get_features=False):
+    def forward(self, images, gt_boxes=None, gt_labels=None, counts=None, img_indexs=None, get_features=False):
+
+        # sources, ego_feat = self.backbone(images)
+        sources = self.backbone(images)
+
+        # ego_preds = self.ego_head(ego_feat).squeeze(-1).squeeze(-1).permute(0, 2, 1).contiguous()
 
         grid_sizes = [feature_map.shape[-2:] for feature_map in sources]
         ancohor_boxes = self.anchors(grid_sizes)
@@ -121,7 +123,8 @@ class RetinaNet(nn.Module):
             flat_conf = self.apply_constraints(flat_conf)
             return flat_conf, features
         elif gt_boxes is not None:  # training mode
-            return self.criterion(flat_conf, flat_loc, gt_boxes, gt_labels, counts, ancohor_boxes, ego_preds, ego_labels, clayer=self.apply_constraints)
+            # return self.criterion(flat_conf, flat_loc, gt_boxes, gt_labels, counts, ancohor_boxes, ego_preds, ego_labels, clayer=self.apply_constraints)
+            return self.criterion(flat_conf, flat_loc, gt_boxes, gt_labels, counts, ancohor_boxes, clayer=self.apply_constraints)
         else:  # otherwise testing mode
             decoded_boxes = []
             for b in range(flat_loc.shape[0]):
@@ -132,7 +135,8 @@ class RetinaNet(nn.Module):
                 decoded_boxes.append(torch.stack(temp_l, 0))
 
             flat_conf = self.apply_constraints(flat_conf)
-            return torch.stack(decoded_boxes, 0), flat_conf, ego_preds
+            # return torch.stack(decoded_boxes, 0), flat_conf, ego_preds
+            return torch.stack(decoded_boxes, 0), flat_conf
 
     ## Apply constraints layer
     def apply_constraints(self, conf, goal=None):
