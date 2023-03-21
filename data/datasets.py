@@ -5,21 +5,23 @@ Target is in xmin, ymin, xmax, ymax, label
 coordinates are in range of [0, 1] normlised height and width
 
 """
-import cv2
-import json, os
-import torch
-import pdb, time
-import torch.utils as tutils
+import json
+import os
+import pdb
 import pickle
-from .transforms import get_clip_list_resized
-import torch.nn.functional as F
+
 import numpy as np
+import torch
+import torch.nn.functional as F
+import torch.utils as tutils
 from PIL import ImageFile
+
+from .transforms import get_clip_list_resized
+
 ImageFile.LOAD_TRUNCATED_IMAGES =   True
-from PIL import Image, ImageDraw
+from PIL import Image
 from modules.tube_helper import make_gt_tube
-import random as random
-from modules import utils 
+from modules import utils
 from random import shuffle
 
 logger = utils.get_logger(__name__)
