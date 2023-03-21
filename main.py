@@ -14,6 +14,8 @@ from gen_dets import gen_dets, eval_framewise_dets
 from tubes import build_eval_tubes
 from val import val
 
+from ccn import ConstraintsGroup, ClausesGroup, ConstraintsLayer, Literal, Clause, DetectionThreshold, Profiler
+
 def str2bool(v):
     return v.lower() in ("yes", "true", "t", "1")
 
@@ -169,6 +171,14 @@ def main():
                         type=int, help='manualseed for reproduction')
     parser.add_argument('--MULTI_GPUS', default=True, type=str2bool, help='If  more than 0 then use all visible GPUs by default only one GPU used ') 
 
+    # CCN layer parameters
+    parser.add_argument('--CCN_CONSTRAINTS', default='', type=str, help="Path to constraints file")
+    parser.add_argument('--CCN_CENTRALITY', default='katz', type=str, help="Centrality used to guide constraints inferrence")
+    parser.add_argument('--CCN_NUM_CLASSES', default = 41, type=int, help="Number of labels constrained")
+    parser.add_argument('--CCN_CUSTOM_ORDER', default='', help="Custom centrality order (set CCN_CENTRALITY to custom)")
+    parser.add_argument('--CLIP', default=1., type=float, help="Gradient norm clipping limit")
+    parser.add_argument('--EXP_NAME', default="", type=str, help="Custom experiment name")
+
     # Use CUDA_VISIBLE_DEVICES=0,1,4,6 to select GPUs to use
 
 
@@ -253,8 +263,47 @@ def main():
     args.num_ego_classes = val_dataset.num_ego_classes
     args.ego_classes = val_dataset.ego_classes
     args.head_size = 256
+
+    ############################# START C-LAYER
+
+    ## Initialise CCN Layer
+    args.ccn_num_classes = args.CCN_NUM_CLASSES
+    args.detection_threshold = DetectionThreshold(args.CONF_THRESH)
+    Profiler.disable()
+
+    args.clip = args.CLIP
+    logger.info(f"Clipping the gradient norm to {args.clip}")
+
+    if args.CCN_CONSTRAINTS != '':
+        constraints = ConstraintsGroup(args.CCN_CONSTRAINTS)
+        clauses = ClausesGroup.from_constraints_group(constraints)
+        logger.info(f"Fetched {len(constraints)} constraints from {args.CCN_CONSTRAINTS}")
+
+        # forced = False
+        # clauses = clauses.add_detection_label(forced)
+        # logger.info(f"Shifted atoms and added n0 to all clauses (forced {forced})")
+
+        if 'custom' in args.CCN_CENTRALITY:
+            order = args.CCN_CUSTOM_ORDER.split(',')
+            centrality = np.array([int(nr) for nr in order])
+            if 'rev' in args.CCN_CENTRALITY:
+                centrality = centrality[::-1]
+        else:
+            centrality = args.CCN_CENTRALITY
+
+        strata = clauses.stratify(centrality)
+        logger.info(f"Generated {len(strata)} strata of constraints with {centrality} centrality")
+
+        clayer = ConstraintsLayer(strata, args.ccn_num_classes)
+        logger.info(str(clayer))
+    else:
+        logger.info("Using the plain model with empty CCN layer")
+        clayer = ConstraintsLayer([], args.ccn_num_classes)
+
+    ############################# END C-LAYER
+
     if args.MODE in ['train', 'val','gen_dets']:
-        net = build_retinanet(args).cuda()
+        net = build_retinanet(args, clayer).cuda()
         if args.MULTI_GPUS:
             logger.info('\nLets do dataparallel\n')
             net = torch.nn.DataParallel(net)

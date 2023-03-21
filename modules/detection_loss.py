@@ -56,13 +56,14 @@ class FocalLoss(nn.Module):
         self.positive_threshold = args.POSTIVE_THRESHOLD
         self.negative_threshold = args.NEGTIVE_THRESHOLD
         self.num_classes = args.num_classes
+        self.ccn_num_classes = args.ccn_num_classes
         self.num_label_types = args.num_label_types
         self.num_classes_list = args.num_classes_list
         self.alpha = 0.25
         self.gamma = 2.0
 
 
-    def forward(self, confidence, predicted_locations, gt_boxes, gt_labels, counts, anchors, ego_preds, ego_labels):
+    def forward(self, confidence, predicted_locations, gt_boxes, gt_labels, counts, anchors, ego_preds, ego_labels, clayer=None):
         ## gt_boxes, gt_labels, counts, ancohor_boxes
         
         """
@@ -150,8 +151,16 @@ class FocalLoss(nn.Module):
         
         masked_labels = all_labels[mask].reshape(-1, self.num_classes) # Remove Ignore labels
         masked_preds = preds[mask].reshape(-1, self.num_classes) # Remove Ignore preds
+
+        if not clayer is None and masked_labels.shape[0] > 0:
+            masked_preds = clayer(masked_preds, goal=masked_labels)
+
+        masked_preds = masked_preds[:, :self.ccn_num_classes]
+        masked_labels = masked_labels[:, :self.ccn_num_classes]
+
         cls_loss = sigmoid_focal_loss(masked_preds, masked_labels, num_pos, self.alpha, self.gamma)
 
+        ### EGO_LABELS:
         mask = ego_labels>-1
         numc = ego_preds.shape[-1]
         masked_preds = ego_preds[mask].reshape(-1, numc) # Remove Ignore preds
