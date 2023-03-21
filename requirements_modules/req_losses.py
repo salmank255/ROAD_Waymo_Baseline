@@ -28,7 +28,7 @@ depending on the provided t-norm type captured in the <logic> argument.
 This method can be modified as more t-norm methods are added to the codebase.
 """
 
-from req_handler import *
+from requirements_modules.req_handler import *
 
 
 def get_size_of_tensor(data):  # in gigabytes

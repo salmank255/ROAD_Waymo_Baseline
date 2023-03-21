@@ -1,6 +1,6 @@
 import numpy as np
 
-from constants import *
+from requirements_modules.constants import *
 
 
 def createIs(file_path, num_classes):
