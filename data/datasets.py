@@ -419,7 +419,7 @@ class VideoDataset(tutils.data.Dataset):
         num_action_classes = len(class_names)
         self.num_classes_list = [1, num_action_classes]
         self.num_classes = 1 + num_action_classes # one for action_ness
-        
+
         self.ego_classes = ['Non_action', 'action']
         self.num_ego_classes = len(self.ego_classes)
         
@@ -734,23 +734,43 @@ class VideoDataset(tutils.data.Dataset):
             final_annots = json.load(fff)
         
         database = final_annots['db']
-        
-        self.label_types =  final_annots['label_types'] #['agent', 'action', 'loc', 'duplex', 'triplet'] #
-        
-        num_label_type = 5
-        self.num_classes = 1 ## one for presence
+
+        ##############################################
+        self.label_types = ['agent', 'action', 'loc']  # final_annots['label_types'] #['agent', 'action', 'loc', 'duplex', 'triplet'] #
+
+        num_label_type = len(self.label_types)  # 5
+        self.num_classes = 1  ## one for presence
         self.num_classes_list = [1]
-        for name in self.label_types: 
-            logger.info('Number of {:s}: all :: {:d} to use: {:d}'.format(name, 
-                len(final_annots['all_'+name+'_labels']),len(final_annots[name+'_labels'])))
-            numc = len(final_annots[name+'_labels'])
+        for name in self.label_types:
+            logger.info('Number of {:s}: all :: {:d} to use: {:d}'.format(name, len(final_annots['all_' + name + '_labels']),
+                            len(final_annots[name + '_labels'])))
+            numc = len(final_annots[name + '_labels'])
             self.num_classes_list.append(numc)
             self.num_classes += numc
-        
+
         # self.ego_classes = final_annots['av_action_labels']
         # self.num_ego_classes = len(self.ego_classes)
-        
-        counts = np.zeros((len(final_annots[self.label_types[-1] + '_labels']), num_label_type), dtype=np.int32)
+
+        # counts = np.zeros((len(final_annots[self.label_types[-1] + '_labels']), num_label_type), dtype=np.int32)
+        counts = np.zeros((19, num_label_type), dtype=np.int32)
+        ##############################################
+
+        # self.label_types =  final_annots['label_types'] #['agent', 'action', 'loc', 'duplex', 'triplet'] #
+        #
+        # num_label_type = 5
+        # self.num_classes = 1 ## one for presence
+        # self.num_classes_list = [1]
+        # for name in self.label_types:
+        #     logger.info('Number of {:s}: all :: {:d} to use: {:d}'.format(name,
+        #         len(final_annots['all_'+name+'_labels']),len(final_annots[name+'_labels'])))
+        #     numc = len(final_annots[name+'_labels'])
+        #     self.num_classes_list.append(numc)
+        #     self.num_classes += numc
+        #
+        # # self.ego_classes = final_annots['av_action_labels']
+        # # self.num_ego_classes = len(self.ego_classes)
+        #
+        # counts = np.zeros((len(final_annots[self.label_types[-1] + '_labels']), num_label_type), dtype=np.int32)
 
         self.video_list = []
         self.numf_list = []
