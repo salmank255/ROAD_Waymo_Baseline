@@ -203,10 +203,9 @@ def run_train(args, train_data_loader, net, optimizer, epoch, iteration):
             # losses.update((loc_loss + conf_loss) / 2.0)
             losses.update(loc_loss + conf_loss)
         else:
-            req_loss = req_loss.item()
+            req_loss = loss_r.item()
             req_losses.update(req_loss)
-            losses.update(
-                loc_loss.item() + conf_loss.item() + req_loss.item())  # do not multiply by req weight, so exp are comparable
+            losses.update(loc_loss + conf_loss + req_loss)  # do not multiply by req weight, so exp are comparable
 
 
         torch.cuda.synchronize()
