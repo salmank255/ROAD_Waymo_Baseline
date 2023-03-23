@@ -171,6 +171,7 @@ def main():
 
     parser.add_argument('--LOGIC', default=None, type=str, help='t-norm to be used in the loss')
     parser.add_argument('--req_loss_weight', default=1.0, type=float, help='weight for the logic-based loss')
+    parser.add_argument('--agentness_th', default=0.0, type=float, help='threshold to distinguish foreground vs background boxes when computing t-norm')
 
     # Use CUDA_VISIBLE_DEVICES=0,1,4,6 to select GPUs to use
 

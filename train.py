@@ -221,7 +221,7 @@ def run_train(args, train_data_loader, net, optimizer, epoch, iteration):
                 loss_group['Overall'] = losses.val
                 args.sw.add_scalars('Losses', loss_group, iteration)
 
-            print_line = 'Itration [{:d}/{:d}]{:06d}/{:06d} loc-loss {:.2f}({:.2f}) cls-loss {:.2f}({:.2f}) req-loss {:.2f}({:.2f})' \
+            print_line = 'Itration [{:d}/{:d}]{:06d}/{:06d} loc-loss {:.2f}({:.2f}) cls-loss {:.2f}({:.2f}) req-loss {:.5f}({:.5f})' \
                         'average-loss {:.2f}({:.2f}) DataTime {:0.2f}({:0.2f}) Timer {:0.2f}({:0.2f})'.format( epoch, 
                         args.MAX_EPOCHS, iteration, args.MAX_ITERS, loc_losses.val, loc_losses.avg, cls_losses.val,
                         cls_losses.avg, req_losses.val, req_losses.avg,
