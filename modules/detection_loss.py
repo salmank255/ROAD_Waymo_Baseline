@@ -170,10 +170,16 @@ class FocalLoss(nn.Module):
             return regression_loss, cls_loss/8.0  # + ego_loss/4.0
         else:
             # do apply the t-norm on "background" boxes
+            # print('*' * 80)
+            # for th in range(0,1,0.01):
+            #     mask = masked_preds[:, 0] > th
+            #     print(th, mask.sum(), masked_preds.shape[0], mask.sum()/masked_preds.shape[0])
+            #     print('*'*80)
+
             mask = masked_preds[:,0] > self.agentness_th
             if mask.any():
                 foreground_masked_preds = masked_preds[mask]
-                print('t-norm on {:}/{:} foreground/overall objects'.format(mask.sum(), masked_preds.shape[0]))
+                # print('t-norm on {:}/{:} foreground/overall objects'.format(mask.sum(), masked_preds.shape[0]))
                 logic_based_loss = logical_requirements_loss(foreground_masked_preds, logic, Cplus, Cminus)
             else:
                 # logic_based_loss = torch.tensor(0., dtype=torch.float32).cuda(device=masked_preds.device)

@@ -146,7 +146,8 @@ def create_exp_name(args):
         )
 
     args.SAVE_ROOT += args.DATASET+'/'
-    args.SAVE_ROOT = args.SAVE_ROOT+'cache/'+args.exp_name+'/'
+    logic = args.LOGIC if args.LOGIC is not None else 'None'
+    args.SAVE_ROOT = args.SAVE_ROOT+'cache_t-norm_{:}_{:}/'.format(logic, args.req_loss_weight)+args.exp_name+'/'
     if not os.path.isdir(args.SAVE_ROOT):
         print('Create: ', args.SAVE_ROOT)
         os.makedirs(args.SAVE_ROOT)
