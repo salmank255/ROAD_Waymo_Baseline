@@ -133,7 +133,8 @@ def run_train(args, train_data_loader, net, optimizer, epoch, iteration):
             Cplus = Cplus.expand(torch.cuda.device_count(), NUM_REQ, NUM_LABELS)
             Cminus = Cminus.expand(torch.cuda.device_count(), NUM_REQ, NUM_LABELS)
 
-    for internel_iter, (images, gt_boxes, gt_labels, ego_labels, counts, img_indexs, wh) in enumerate(train_data_loader):
+    # for internel_iter, (images, gt_boxes, gt_labels, ego_labels, counts, img_indexs, wh) in enumerate(train_data_loader):
+    for internel_iter, (images, gt_boxes, gt_labels, counts, img_indexs, wh, _, _) in enumerate(train_data_loader):
         iteration += 1
         # if internel_iter > 20:
         #     break
@@ -141,7 +142,7 @@ def run_train(args, train_data_loader, net, optimizer, epoch, iteration):
         gt_boxes = gt_boxes.cuda(0, non_blocking=True)
         gt_labels = gt_labels.cuda(0, non_blocking=True)
         counts = counts.cuda(0, non_blocking=True)
-        ego_labels = ego_labels.cuda(0, non_blocking=True)
+        # ego_labels = ego_labels.cuda(0, non_blocking=True)
 
         if args.LOGIC is not None:
             # Iplus = Iplus.cuda(0, non_blocking=True)
@@ -161,13 +162,14 @@ def run_train(args, train_data_loader, net, optimizer, epoch, iteration):
 
         #######################################
         if args.LOGIC is None:
-            loss_l, loss_c = net(images, gt_boxes, gt_labels, ego_labels, counts, img_indexs)
+            # loss_l, loss_c = net(images, gt_boxes, gt_labels, ego_labels, counts, img_indexs)
+            loss_l, loss_c = net(images, gt_boxes, gt_labels, counts, img_indexs)
             # Mean over the losses computed on the different GPUs
             loss_l, loss_c = loss_l.mean(), loss_c.mean()
             loss = loss_l + loss_c
         else:
-            loss_l, loss_c, loss_r = net(images, gt_boxes, gt_labels, ego_labels, counts, img_indexs,
-                                         logic=args.LOGIC, Cplus=Cplus, Cminus=Cminus)
+            # loss_l, loss_c, loss_r = net(images, gt_boxes, gt_labels, ego_labels, counts, img_indexs, logic=args.LOGIC, Cplus=Cplus, Cminus=Cminus)
+            loss_l, loss_c, loss_r = net(images, gt_boxes, gt_labels, counts, img_indexs, logic=args.LOGIC, Cplus=Cplus, Cminus=Cminus)
             # Mean over the losses computed on the different GPUs
             loss_l, loss_c, loss_r = loss_l.mean(), loss_c.mean(), loss_r.mean()
 
@@ -241,8 +243,8 @@ def run_val(args, val_data_loader, val_dataset, net, epoch, iteration):
         tvs = time.perf_counter()
         
         mAP, ap_all, ap_strs = validate(args, net, val_data_loader, val_dataset, epoch)
-        label_types = args.label_types + ['ego_action']
-        all_classes = args.all_classes + [args.ego_classes]
+        label_types = args.label_types # + ['ego_action']
+        all_classes = args.all_classes # + [args.ego_classes]
         mAP_group = dict()
         
         for nlt in range(args.num_label_types+1):
