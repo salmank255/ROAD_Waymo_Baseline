@@ -419,7 +419,7 @@ class VideoDataset(tutils.data.Dataset):
         num_action_classes = len(class_names)
         self.num_classes_list = [1, num_action_classes]
         self.num_classes = 1 + num_action_classes # one for action_ness
-        
+
         self.ego_classes = ['Non_action', 'action']
         self.num_ego_classes = len(self.ego_classes)
         
@@ -607,8 +607,8 @@ class VideoDataset(tutils.data.Dataset):
             self.num_classes_list.append(numc)
             self.num_classes += numc
         
-        self.ego_classes = final_annots['av_action_labels']
-        self.num_ego_classes = len(self.ego_classes)
+        # self.ego_classes = final_annots['av_action_labels']
+        # self.num_ego_classes = len(self.ego_classes)
 
         # counts = np.zeros((len(final_annots[self.label_types[-1] + '_labels']), num_label_type), dtype=np.int32)
         counts = np.zeros((len(final_annots[self.label_types[0] + '_labels']) + len(final_annots[self.label_types[1] + '_labels']) +len(final_annots[self.label_types[2] + '_labels'])  , num_label_type), dtype=np.int32)
@@ -734,23 +734,43 @@ class VideoDataset(tutils.data.Dataset):
             final_annots = json.load(fff)
         
         database = final_annots['db']
-        
-        self.label_types =  final_annots['label_types'] #['agent', 'action', 'loc', 'duplex', 'triplet'] #
-        
-        num_label_type = 5
-        self.num_classes = 1 ## one for presence
+
+        ##############################################
+        self.label_types = ['agent', 'action', 'loc']  # final_annots['label_types'] #['agent', 'action', 'loc', 'duplex', 'triplet'] #
+
+        num_label_type = len(self.label_types)  # 5
+        self.num_classes = 1  ## one for presence
         self.num_classes_list = [1]
-        for name in self.label_types: 
-            logger.info('Number of {:s}: all :: {:d} to use: {:d}'.format(name, 
-                len(final_annots['all_'+name+'_labels']),len(final_annots[name+'_labels'])))
-            numc = len(final_annots[name+'_labels'])
+        for name in self.label_types:
+            logger.info('Number of {:s}: all :: {:d} to use: {:d}'.format(name, len(final_annots['all_' + name + '_labels']),
+                            len(final_annots[name + '_labels'])))
+            numc = len(final_annots[name + '_labels'])
             self.num_classes_list.append(numc)
             self.num_classes += numc
-        
-        self.ego_classes = final_annots['av_action_labels']
-        self.num_ego_classes = len(self.ego_classes)
-        
-        counts = np.zeros((len(final_annots[self.label_types[-1] + '_labels']), num_label_type), dtype=np.int32)
+
+        # self.ego_classes = final_annots['av_action_labels']
+        # self.num_ego_classes = len(self.ego_classes)
+
+        # counts = np.zeros((len(final_annots[self.label_types[-1] + '_labels']), num_label_type), dtype=np.int32)
+        counts = np.zeros((19, num_label_type), dtype=np.int32)
+        ##############################################
+
+        # self.label_types =  final_annots['label_types'] #['agent', 'action', 'loc', 'duplex', 'triplet'] #
+        #
+        # num_label_type = 5
+        # self.num_classes = 1 ## one for presence
+        # self.num_classes_list = [1]
+        # for name in self.label_types:
+        #     logger.info('Number of {:s}: all :: {:d} to use: {:d}'.format(name,
+        #         len(final_annots['all_'+name+'_labels']),len(final_annots[name+'_labels'])))
+        #     numc = len(final_annots[name+'_labels'])
+        #     self.num_classes_list.append(numc)
+        #     self.num_classes += numc
+        #
+        # # self.ego_classes = final_annots['av_action_labels']
+        # # self.num_ego_classes = len(self.ego_classes)
+        #
+        # counts = np.zeros((len(final_annots[self.label_types[-1] + '_labels']), num_label_type), dtype=np.int32)
 
         self.video_list = []
         self.numf_list = []
@@ -775,7 +795,7 @@ class VideoDataset(tutils.data.Dataset):
                     
                     frame_index = frame_num-1  
                     frame_level_annos[frame_index]['labeled'] = True 
-                    frame_level_annos[frame_index]['ego_label'] = frames[frame_id]['av_action_ids'][0]
+                    # frame_level_annos[frame_index]['ego_label'] = frames[frame_id]['av_action_ids'][0]
                     
                     frame = frames[frame_id]
                     if 'annos' not in frame.keys():
@@ -790,7 +810,7 @@ class VideoDataset(tutils.data.Dataset):
                         box = anno['box']
                         
                         assert box[0]<box[2] and box[1]<box[3], box
-                        assert width==1920 and height==1280, (width, height, box)
+                        # assert width==1920 and height==1280, (width, height, box)
 
                         for bi in range(4):
                             assert 0<=box[bi]<=1.01, box
@@ -869,10 +889,10 @@ class VideoDataset(tutils.data.Dataset):
         videoname = self.video_list[video_id]
         images = []
         frame_num = start_frame
-        ego_labels = np.zeros(self.SEQ_LEN)-1
+        # ego_labels = np.zeros(self.SEQ_LEN)-1
         all_boxes = []
         labels = []
-        ego_labels = []
+        # ego_labels = []
         mask = np.zeros(self.SEQ_LEN, dtype=np.int)
         indexs = []
         for i in range(self.SEQ_LEN):
@@ -889,11 +909,11 @@ class VideoDataset(tutils.data.Dataset):
                 mask[i] = 1
                 all_boxes.append(self.frame_level_list[video_id][frame_num]['boxes'].copy())
                 labels.append(self.frame_level_list[video_id][frame_num]['labels'].copy())
-                ego_labels.append(self.frame_level_list[video_id][frame_num]['ego_label'])
+                # ego_labels.append(self.frame_level_list[video_id][frame_num]['ego_label'])
             else:
                 all_boxes.append(np.asarray([]))
                 labels.append(np.asarray([]))
-                ego_labels.append(-1)            
+                # ego_labels.append(-1)
             frame_num += step_size
         
         if self.DATASET == 'ava':
@@ -914,7 +934,8 @@ class VideoDataset(tutils.data.Dataset):
                     boxes[:, 1] *= height # height y1
                     boxes[:, 3] *= height # height y2
 
-        return clip, all_boxes, labels, ego_labels, index, wh, self.num_classes
+        # return clip, all_boxes, labels, ego_labels, index, wh, self.num_classes
+        return clip, all_boxes, labels, index, wh, self.num_classes, videoname, start_frame
 
 
 def custum_collate(batch):
@@ -922,19 +943,23 @@ def custum_collate(batch):
     images = []
     boxes = []
     targets = []
-    ego_targets = []
+    # ego_targets = []
     image_ids = []
     whs = []
+    videonames = []
+    start_frames = []
     
     for sample in batch:
         images.append(sample[0])
         boxes.append(sample[1])
         targets.append(sample[2])
-        ego_targets.append(torch.LongTensor(sample[3]))
-        image_ids.append(sample[4])
-        whs.append(torch.LongTensor(sample[5]))
-        num_classes = sample[6]
-        
+        # ego_targets.append(torch.LongTensor(sample[3]))
+        image_ids.append(sample[3])
+        whs.append(torch.LongTensor(sample[4]))
+        num_classes = sample[5]
+        videonames.append(sample[6])
+        start_frames.append(sample[7])
+
     counts = []
     max_len = -1
     seq_len = len(boxes[0])
@@ -960,5 +985,6 @@ def custum_collate(batch):
     # images = torch.stack(images, 0)
     images = get_clip_list_resized(images)
     # print(images.shape)
-    return images, new_boxes, new_targets, torch.stack(ego_targets,0), \
-            torch.LongTensor(counts), image_ids, torch.stack(whs,0)
+    # return images, new_boxes, new_targets, torch.stack(ego_targets,0), torch.LongTensor(counts), image_ids, torch.stack(whs,0)
+    return images, new_boxes, new_targets, torch.LongTensor(counts), image_ids, torch.stack(whs,0), videonames, start_frames
+
