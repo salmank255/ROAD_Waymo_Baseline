@@ -900,6 +900,7 @@ class VideoDataset(tutils.data.Dataset):
         height, width = clip.shape[-2:]
         wh = [height, width]
         global g_w, g_h
+        
         g_w, g_h = height, width
         # print('image', wh)
         # print(rr)
