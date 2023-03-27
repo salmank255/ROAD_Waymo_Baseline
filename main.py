@@ -244,6 +244,11 @@ def main():
     val_dataset = VideoDataset(args, train=False, transform=val_transform, skip_step=skip_step, full_test=full_test)
     logger.info('Done Loading Dataset Validation Dataset')
 
+    # resize one instance of val dataset to get wh
+    args.wh = val_dataset[0][5]
+    logger.info('wh (hight, width): {}'.format(args.wh))
+
+
     args.num_classes =  val_dataset.num_classes
     # one for objectness
     args.label_types = val_dataset.label_types

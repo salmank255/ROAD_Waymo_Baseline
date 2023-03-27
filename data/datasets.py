@@ -24,6 +24,7 @@ from random import shuffle
 
 logger = utils.get_logger(__name__)
 
+g_w, g_h = 0, 0
 
 def make_box_anno(llist):
     box = [llist[2], llist[3], llist[4], llist[5]]
@@ -900,7 +901,7 @@ class VideoDataset(tutils.data.Dataset):
         height, width = clip.shape[-2:]
         wh = [height, width]
         global g_w, g_h
-        
+
         g_w, g_h = height, width
         # print('image', wh)
         # print(rr)
