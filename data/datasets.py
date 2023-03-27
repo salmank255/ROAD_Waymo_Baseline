@@ -110,7 +110,7 @@ def get_box(box, counts):
         # if add_one ==0:
         box[bi] = min(1.0, max(0, box[bi]))
         if counts is None:
-            box[bi] = box[bi]*691 if bi % 2 == 0 else box[bi]*691
+            box[bi] = box[bi]*1296 if bi % 2 == 0 else box[bi]*864
 
     return box, counts
 
@@ -250,7 +250,6 @@ def get_gt_video_list(anno_file, SUBSETS):
 
 def get_filtered_tubes(label_key, final_annots, videoname):
     
-    global g_w, g_h
     key_tubes = final_annots['db'][videoname][label_key]
     all_labels = final_annots['all_'+label_key.replace('tubes','labels')]
     labels = final_annots[label_key.replace('tubes','labels')]
@@ -285,7 +284,6 @@ def get_filtered_tubes(label_key, final_annots, videoname):
 
 def get_filtered_frames(label_key, final_annots, videoname, filtered_gts):
     
-    global g_w, g_h
     frames = final_annots['db'][videoname]['frames']
     if label_key == 'agent_ness':
         all_labels = []
@@ -591,9 +589,13 @@ class VideoDataset(tutils.data.Dataset):
         
         database = final_annots['db']
         
-        self.label_types =  final_annots['label_types'] #['agent', 'action', 'loc', 'duplex', 'triplet'] #
+        # self.label_types =  final_annots['label_types'] #['agent', 'action', 'loc', 'duplex', 'triplet'] #
         
-        num_label_type = 5
+        self.label_types = ['agent', 'action', 'loc'] #
+        # print(self.label_types)
+        # print(rr)
+
+        num_label_type = len(self.label_types)
         self.num_classes = 1 ## one for presence
         self.num_classes_list = [1]
         for name in self.label_types: 
@@ -605,8 +607,10 @@ class VideoDataset(tutils.data.Dataset):
         
         self.ego_classes = final_annots['av_action_labels']
         self.num_ego_classes = len(self.ego_classes)
-        
-        counts = np.zeros((len(final_annots[self.label_types[-1] + '_labels']), num_label_type), dtype=np.int32)
+
+        # counts = np.zeros((len(final_annots[self.label_types[-1] + '_labels']), num_label_type), dtype=np.int32)
+        counts = np.zeros((len(final_annots[self.label_types[0] + '_labels']) + len(final_annots[self.label_types[1] + '_labels']) +len(final_annots[self.label_types[2] + '_labels'])  , num_label_type), dtype=np.int32)
+
 
         self.video_list = []
         self.numf_list = []
@@ -898,6 +902,7 @@ class VideoDataset(tutils.data.Dataset):
         global g_w, g_h
         g_w, g_h = height, width
         # print('image', wh)
+        # print(rr)
         if self.ANCHOR_TYPE == 'RETINA':
             for bb, boxes in enumerate(all_boxes):
                 if boxes.shape[0]>0:
