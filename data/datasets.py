@@ -383,6 +383,8 @@ class VideoDataset(tutils.data.Dataset):
         self.anno_root = self.root
         # if len(args.ANNO_ROOT)>1:
         #     self.anno_root = args.ANNO_ROOT 
+        self.tiny_dataset = args.tiny_dataset
+        self.tiny_videoset = args.tiny_videoset.split(',')
 
         # self.image_sets = image_sets
         self.transform = transform
@@ -638,6 +640,9 @@ class VideoDataset(tutils.data.Dataset):
         frame_level_list = []
 
         for videoname in sorted(database.keys()):
+            if self.tiny_dataset and videoname not in self.tiny_videoset:
+                continue
+
             # print(is_part_of_subsets(final_annots['db'][videoname]['split_ids'], self.SUBSETS))
             if not is_part_of_subsets(final_annots['db'][videoname]['split_ids'], self.SUBSETS):
                 continue
