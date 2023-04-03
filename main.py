@@ -257,7 +257,7 @@ def main():
     logger.info('Done Loading Dataset Validation Dataset')
 
     # resize one instance of val dataset to get wh
-    args.wh = val_dataset[0][5]
+    args.wh = val_dataset[0][5] if not args.tiny_dataset else train_dataset[0][5]
     logger.info('wh (hight, width): {}'.format(args.wh))
 
 
