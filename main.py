@@ -171,7 +171,7 @@ def main():
 
     parser.add_argument('--LOGIC', default=None, type=str, help='t-norm to be used in the loss')
     parser.add_argument('--req_loss_weight', default=10.0, type=float, help='weight for the logic-based loss')
-    parser.add_argument('--agentness_th', default=0.0, type=float, help='threshold to distinguish foreground vs background boxes when computing t-norm')
+    parser.add_argument('--agentness_th', default=0.8, type=float, help='threshold to distinguish foreground vs background boxes when computing t-norm')
     parser.add_argument('--tiny_dataset', default=False, type=str2bool)
     parser.add_argument('--tiny_videoset', default="train_00000, train_00001, train_00002, train_00003, train_00004, train_00005", type=str)
 
