@@ -306,7 +306,7 @@ def eval_framewise_dets(args, val_dataset):
                 if len(subset)<2:
                     continue
 
-                sresults = evaluate_frames(val_dataset.anno_file, args.det_file_name, subset, iou_thresh=0.5, dataset=args.DATASET)
+                sresults = evaluate_frames(val_dataset.anno_file, args.det_file_name, subset, args.wh, iou_thresh=0.5, dataset=args.DATASET)
                 for _, label_type in enumerate(label_types):
                     name = subset + ' & ' + label_type
                     rstr = '\n\nResults for ' + name + '\n'

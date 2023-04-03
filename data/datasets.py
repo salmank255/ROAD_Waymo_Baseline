@@ -26,6 +26,7 @@ from random import shuffle
 
 logger = utils.get_logger(__name__)
 
+g_w, g_h = 0, 0
 
 def make_box_anno(llist):
     box = [llist[2], llist[3], llist[4], llist[5]]
@@ -272,7 +273,7 @@ def get_filtered_tubes(label_key, final_annots, videoname):
                     for bi in range(4):
                         assert 0<=box[bi]<=1.01, box
                         box[bi] = min(1.0, max(0, box[bi]))
-                        box[bi] = box[bi]*1296 if bi % 2 == 0 else box[bi]*864
+                        box[bi] = box[bi]*g_h if bi % 2 == 0 else box[bi]*g_w
                     boxes.append(box)
             else:
                 for fn in tube['frames']:
@@ -306,7 +307,7 @@ def get_filtered_frames(label_key, final_annots, videoname, filtered_gts):
                     for bi in range(4):
                         assert 0<=box[bi]<=1.01, box
                         box[bi] = min(1.0, max(0, box[bi]))
-                        box[bi] = box[bi]*1296 if bi % 2 == 0 else box[bi]*864
+                        box[bi] = box[bi]*g_h if bi % 2 == 0 else box[bi]*g_w
                     if label_key == 'agent_ness':
                         filtered_ids = [0]
                     else:
@@ -458,10 +459,10 @@ class VideoDataset(tutils.data.Dataset):
             start_frames = [kf - self.MAX_SEQ_STEP*self.SEQ_LEN//2 for kf in keyframes]
 
             # make ids
-            # start_frames = [ f for f in range(numf-self.MIN_SEQ_STEP*self.SEQ_LEN, -1,  -self.skip_step)]
-            # if self.full_test and 0 not in start_frames:
-            # start_frames.append(0)
-            # logger.info('number of start frames: '+ str(len(start_frames)))
+            start_frames = [ f for f in range(numf-self.MIN_SEQ_STEP*self.SEQ_LEN, 0,  -self.skip_step)]
+            if self.full_test and 0 not in start_frames:
+                start_frames.append(0)
+            logger.info('number of start frames: '+ str(len(start_frames)))
 
             for frame_num, kf in zip(start_frames, keyframes):
                 self.ids.append([vid, frame_num, self.MAX_SEQ_STEP, kf])
@@ -679,7 +680,7 @@ class VideoDataset(tutils.data.Dataset):
                         box = anno['box']
                         
                         assert box[0]<box[2] and box[1]<box[3], box
-                        assert width==1920 and height==1280, (width, height, box)
+                        assert width==1920 and height==1280, (width, height, box) # for ROAD ++
                         
                         # temp_img = cv2.rectangle(temp_img, (int(box[0]*1920),int(box[1]*1280)), (int(box[2]*1920),int(box[3]*1280)), (255,0,0), 2)
                         # cv2.imwrite('temp_img.png',temp_img)
@@ -720,7 +721,7 @@ class VideoDataset(tutils.data.Dataset):
             frame_level_list.append(frame_level_annos)  
 
             ## make ids
-            start_frames = [ f for f in range(numf-self.MIN_SEQ_STEP*self.SEQ_LEN, 1,  -self.skip_step)]
+            start_frames = [f for f in range(numf-self.MIN_SEQ_STEP*self.SEQ_LEN, 1,  -self.skip_step)]
             if self.full_test and 1 not in start_frames:
                 start_frames.append(1)
             logger.info('number of start frames: '+ str(len(start_frames)))
@@ -818,7 +819,7 @@ class VideoDataset(tutils.data.Dataset):
                         box = anno['box']
                         
                         assert box[0]<box[2] and box[1]<box[3], box
-                        # assert width==1920 and height==1280, (width, height, box)
+                        assert width==1280 and height==960, (width, height, box) # for ROAD
 
                         for bi in range(4):
                             assert 0<=box[bi]<=1.01, box
@@ -929,6 +930,9 @@ class VideoDataset(tutils.data.Dataset):
         clip = self.transform(images)
         height, width = clip.shape[-2:]
         wh = [height, width]
+        global g_w, g_h
+
+        g_w, g_h = height, width
         # print('image', wh)
         # print(rr)
         if self.ANCHOR_TYPE == 'RETINA':
