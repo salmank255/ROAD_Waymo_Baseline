@@ -15,6 +15,7 @@ from data.datasets import is_part_of_subsets, get_filtered_tubes, get_filtered_f
 from data.datasets import get_frame_level_annos_ucf24, get_filtered_tubes_ucf24, read_labelmap
 from modules.tube_helper import get_tube_3Diou, make_det_tube
 from modules import utils
+
 logger = utils.get_logger(__name__)
 
 def voc_ap(rec, prec, use_07_metric=False):
@@ -438,12 +439,12 @@ def get_gt_frames_ucf24(final_annots, label_type):
     return frames
 
 
-def get_gt_frames_ava(final_annots, label_type):
+def get_gt_frames_ava(final_annots, label_type, wh):
     """Get video list form ground truth videos used in subset 
     and their ground truth frames """
 
     assert label_type in ['action_ness', 'actions'], 'only valid for action classes not for actionness but TODO: should be easy to incorprate just add to eval_framewise_ego_actions_ucf24 as preds are same but gt in this format {}'.format(label_type)
-
+    width, height = wh
     frames = {}
     # trainvideos = final_annots['trainvideos']
     # labels = final_annots['classes']
@@ -465,7 +466,7 @@ def get_gt_frames_ava(final_annots, label_type):
                     for bi in range(4):
                         assert 0<=box[bi]<=1.01, box
                         box[bi] = min(1.0, max(0, box[bi]))
-                        box[bi] = box[bi]*1296 if bi % 2 == 0 else box[bi]*864
+                        box[bi] = box[bi]*height if bi % 2 == 0 else box[bi]*width
                     
                     box = np.asarray(box)
 
@@ -487,7 +488,7 @@ def get_gt_frames_ava(final_annots, label_type):
     return frames
 
 
-def get_gt_frames(final_annots, subsets, label_type, dataset):
+def get_gt_frames(final_annots, subsets, label_type, dataset, wh):
     """Get video list form ground truth videos used in subset 
     and their ground truth frames """
     if dataset == 'road' or dataset=='roadpp':
@@ -504,7 +505,7 @@ def get_gt_frames(final_annots, subsets, label_type, dataset):
     elif dataset == 'ucf24':
         return get_gt_frames_ucf24(final_annots, label_type)
     else:
-        return get_gt_frames_ava(final_annots, label_type)
+        return get_gt_frames_ava(final_annots, label_type, wh)
     
     return frames
 
@@ -597,7 +598,7 @@ def eval_framewise_ego_actions(final_annots, detections, subsets, dataset='road'
         return eval_framewise_ego_actions_ucf24(final_annots, detections, subsets)
 
 
-def evaluate_frames(anno_file, det_file, subset, iou_thresh=0.5, dataset='road'):
+def evaluate_frames(anno_file, det_file, subset, wh, iou_thresh=0.5, dataset='road'):
     
 
     logger.info('Evaluating frames for datasets '+ dataset)
@@ -645,7 +646,7 @@ def evaluate_frames(anno_file, det_file, subset, iou_thresh=0.5, dataset='road')
             ap_strs = []
             re_all = []
             sap = 0.0
-            gt_frames = get_gt_frames(final_annots, subset, label_type, dataset)
+            gt_frames = get_gt_frames(final_annots, subset, label_type, dataset, wh)
             t1 = time.perf_counter()
             # logger.info('Time taken to get GT frame for evaluation {}'.format(t0-t1))
             if label_type == 'agent_ness':
