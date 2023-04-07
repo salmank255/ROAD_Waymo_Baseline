@@ -60,9 +60,12 @@ class FocalLoss(nn.Module):
         self.num_classes_list = args.num_classes_list
         self.alpha = 0.25
         self.gamma = 2.0
+        
+        # for domain classification adaptation
+        self.domain_loss_fn = nn.CrossEntropyLoss() # nn.BCELoss # nn.CrossEntropyLoss()
 
 
-    def forward(self, confidence, predicted_locations, gt_boxes, gt_labels, counts, anchors, ego_preds, ego_labels):
+    def forward(self, confidence, predicted_locations, gt_boxes, gt_labels, counts, anchors, ego_preds, ego_labels): #, domain_preds, domain_labels
         ## gt_boxes, gt_labels, counts, ancohor_boxes
         
         """
@@ -157,9 +160,14 @@ class FocalLoss(nn.Module):
         masked_preds = ego_preds[mask].reshape(-1, numc) # Remove Ignore preds
         masked_labels = ego_labels[mask].reshape(-1) # Remove Ignore labels
         one_hot_labels = get_one_hot_labels(masked_labels, numc)
-        # ego_loss = 0
-        # if one_hot_labels.shape[0]>0:
-        #     ego_loss = sigmoid_focal_loss(masked_preds, one_hot_labels, one_hot_labels.shape[0], self.alpha, self.gamma)
+        ego_loss = 0
+        # print(masked_preds.shape, masked_labels.shape)
+        if one_hot_labels.shape[0]>0:
+            ego_loss = sigmoid_focal_loss(masked_preds, one_hot_labels, one_hot_labels.shape[0], self.alpha, self.gamma)
+        
+        # for domain classification adaptation
+        # domain_labels = F.one_hot(domain_labels, num_classes=2).float()
+        # domain_loss = self.domain_loss_fn(domain_preds, domain_labels)
         
         # print(regression_loss, cls_loss, ego_loss)
-        return regression_loss, cls_loss/8.0 #+ ego_loss/4.0
+        return regression_loss, cls_loss/8.0 + ego_loss/4.0 #, domain_loss

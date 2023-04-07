@@ -70,8 +70,8 @@ class Resize(object):
 
 class ResizeClip(object):
     def __init__(self, min_size, max_size):
-        self.min_size = min_size
-        self.max_size = max_size
+        self.min_size = min_size # for 960, 960
+        self.max_size = max_size # 1296, 1296
         self.stride = 32
     # modified from torchvision to add support for max size
     def get_size(self, image_size):
@@ -81,17 +81,17 @@ class ResizeClip(object):
             return (self.min_size, self.max_size)
         
         else:
-            w, h = image_size
-            size = self.min_size
-            max_size = self.max_size
+            w, h = image_size # 1280, 960    1920, 1280
+            size = self.min_size # 960
+            max_size = self.max_size # 1296
             if max_size is not None:
-                min_original_size = float(min((w, h)))
-                max_original_size = float(max((w, h)))
-                if max_original_size / min_original_size * size > max_size:
-                    size = int(round(max_size * min_original_size / max_original_size))
+                min_original_size = float(min((w, h))) # 960, 1280
+                max_original_size = float(max((w, h))) # 1280, 1920
+                if max_original_size / min_original_size * size > max_size: 
+                    size = int(round(max_size * min_original_size / max_original_size)) # for ++ 864
 
             if (w <= h and w == size) or (h <= w and h == size):
-                return (h, w)
+                return (h, w) # 960, 1280
 
             if w < h:
                 ow = size
@@ -100,7 +100,7 @@ class ResizeClip(object):
                 oh = size
                 ow = int(size * w / h)
 
-            return (oh, ow)
+            return (oh, ow) # 864 1296
 
     def __call__(self, clip):
         size = self.get_size(clip[0].size)
@@ -108,6 +108,17 @@ class ResizeClip(object):
         return clip
 
 
+class ResizeClip_DA(object):
+    def __init__(self, min_size, max_size):
+        self.min_size = min_size 
+        self.max_size = max_size 
+        self.stride = 32
+    # modified from torchvision to add support for max size
+
+    def __call__(self, clip):
+        size = (self.min_size, self.max_size)
+        clip = [F.resize(image, size) for image in clip]
+        return clip
 class ToTensorStack(object):
     
     """

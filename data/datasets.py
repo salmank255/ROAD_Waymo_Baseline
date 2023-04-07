@@ -29,9 +29,7 @@ def make_box_anno(llist):
     box = [llist[2], llist[3], llist[4], llist[5]]
     return [float(b) for b in box]
 
-
 def read_ava_annotations(anno_file):
-    # print(anno_file)
     lines = open(anno_file, 'r').readlines()
     annotations = {}
     is_train = anno_file.find('train') > -1
@@ -43,12 +41,12 @@ def read_ava_annotations(anno_file):
         #     break
         line = line.rstrip('\n')
         line_list = line.split(',')
-        # print(line_list)
+    
         video_name = line_list[0]
         if video_name not in annotations:
             annotations[video_name] = {}
         time_stamp = float(line_list[1])
-        # print(line_list)
+        
         numf = float(line_list[7]) ## or score
         ts = str(int(time_stamp))
         if len(line_list) > 2:
@@ -67,8 +65,6 @@ def read_ava_annotations(anno_file):
     # for video_name in annotations:
         # print(video_name)
     return annotations
-
-
 
 def read_labelmap(labelmap_file):
     """Read label map and class ids."""
@@ -97,7 +93,6 @@ def read_labelmap(labelmap_file):
     print('NUmber of classes are ', count)
 
     return class_names, class_ids_map, labelmap
-
 
 def get_box(box, counts):
     box = box.astype(np.float32) - 1
@@ -138,7 +133,6 @@ def get_frame_level_annos_ucf24(annotations, numf, num_classes, counts=None):
                 counts[label,1] += 1
         
     return frame_level_annos, counts
-
 
 def get_frame_level_annos_ava(annotations, numf, num_classes, class_ids_map, counts=None, split='val'):
     frame_level_annos = [ {'labeled':False,'ego_label':-1,'boxes':[],'labels':[]} for _ in range(numf)]
@@ -198,7 +192,6 @@ def get_frame_level_annos_ava(annotations, numf, num_classes, class_ids_map, cou
 
     return frame_level_annos, counts, keyframes, skip_count
 
-
 def get_filtered_tubes_ucf24(annotations):
     filtered_tubes = []
     for tubeid, tube in enumerate(annotations):
@@ -216,11 +209,9 @@ def get_filtered_tubes_ucf24(annotations):
         filtered_tubes.append(temp_tube)
     return filtered_tubes
 
-
 def resize(image, size):
     image = F.interpolate(image.unsqueeze(0), size=size, mode="nearest").squeeze(0)
     return image
-
 
 def filter_labels(ids, all_labels, used_labels):
     """Filter the used ids"""
@@ -231,7 +222,6 @@ def filter_labels(ids, all_labels, used_labels):
             used_ids.append(used_labels.index(label))
     
     return used_ids
-
 
 def get_gt_video_list(anno_file, SUBSETS):
     """Get video list form ground truth videos used in subset 
@@ -246,7 +236,6 @@ def get_gt_video_list(anno_file, SUBSETS):
             video_list.append(videoname)
 
     return video_list
-
 
 def get_filtered_tubes(label_key, final_annots, videoname):
     
@@ -281,7 +270,6 @@ def get_filtered_tubes(label_key, final_annots, videoname):
             
     return filtered_tubes
 
-
 def get_filtered_frames(label_key, final_annots, videoname, filtered_gts):
     
     frames = final_annots['db'][videoname]['frames']
@@ -304,7 +292,8 @@ def get_filtered_frames(label_key, final_annots, videoname, filtered_gts):
                     for bi in range(4):
                         assert 0<=box[bi]<=1.01, box
                         box[bi] = min(1.0, max(0, box[bi]))
-                        box[bi] = box[bi]*1296 if bi % 2 == 0 else box[bi]*864
+                        # box[bi] = box[bi]*682 if bi % 2 == 0 else box[bi]*512 # for road
+                        box[bi] = box[bi]*1296 if bi % 2 == 0 else box[bi]*864 # for road++
                     if label_key == 'agent_ness':
                         filtered_ids = [0]
                     else:
@@ -341,7 +330,6 @@ def get_video_tubes(final_annots, videoname):
             tubes[key] = filtered_tubes
     
     return tubes
-
 
 def is_part_of_subsets(split_ids, SUBSETS):
     
@@ -385,6 +373,7 @@ class VideoDataset(tutils.data.Dataset):
         # self.image_sets = image_sets
         self.transform = transform
         self.ids = list()
+        # self._generate_classes()
         if self.DATASET == 'road':
             self._make_lists_road()  
         elif self.DATASET == 'ucf24':
@@ -392,12 +381,13 @@ class VideoDataset(tutils.data.Dataset):
         elif self.DATASET == 'ava':
             self._make_lists_ava() 
         elif self.DATASET == 'roadpp':
+            self.num_samples = args.num_samples
             self._make_lists_roadpp() 
 
         else:
             raise Exception('Specfiy corect dataset')
         
-        self.num_label_types = len(self.label_types)
+        # self.num_label_types = len(self.label_types)
 
 
 
@@ -413,7 +403,7 @@ class VideoDataset(tutils.data.Dataset):
         class_names, class_ids_map, _ = read_labelmap(labelmap_file)
 
         
-        self.label_types =  ['action_ness', 'actions'] #
+        self.label_types = ['action_ness', 'actions'] #
         num_action_classes = len(class_names)
         self.num_classes_list = [1, num_action_classes]
         self.num_classes = 1 + num_action_classes # one for action_ness
@@ -546,7 +536,7 @@ class VideoDataset(tutils.data.Dataset):
             # logger.info('Frames with Boxes are {:d} out of {:d} in {:s}'.format(frames_with_boxes, numf, videoname))
             frame_level_list.append(frame_level_annos)  
             ## make ids
-            start_frames = [ f for f in range(numf-self.MIN_SEQ_STEP*self.SEQ_LEN, -1,  -self.skip_step)]
+            start_frames = [ f for f in range(numf-self.MIN_SEQ_STEP*self.SEQ_LEN, 0,  -self.skip_step)]
             
             if self.full_test and 0 not in start_frames:
                 start_frames.append(0)
@@ -576,6 +566,31 @@ class VideoDataset(tutils.data.Dataset):
         self.childs = {}
         self.num_videos = len(self.video_list)
         self.print_str = ptrstr
+    
+    def _generate_classes(self):
+        self.anno_file_roadpp  = '/home/izzeddin/Desktop/road-dataset/roadpp/road_plus_plus_trainval_v1.0.json'
+        with open(self.anno_file,'r') as fff:
+            final_annots = json.load(fff)
+        
+
+        self.label_types = ['agent', 'action', 'loc'] #
+
+        self.num_label_type = len(self.label_types)
+        self.num_classes = 1 ## one for presence
+        self.num_classes_list = [1]
+    
+        numc = len(final_annots['agent_labels'])
+        self.num_classes_list.append(numc)
+        self.num_classes += numc
+
+        self.anno_file_road  = '/home/izzeddin/Desktop/road-dataset/road/road_trainval_v1.0.json'
+        with open(self.anno_file,'r') as fff:
+            final_annots = json.load(fff)
+        
+        for name in ['action', 'loc']:
+            numc = len(final_annots[name+'_labels'])
+            self.num_classes_list.append(numc)
+            self.num_classes += numc
         
 
     def _make_lists_roadpp(self):
@@ -595,13 +610,15 @@ class VideoDataset(tutils.data.Dataset):
         # print(self.label_types)
         # print(rr)
 
-        num_label_type = len(self.label_types)
+        self.num_label_type = len(self.label_types)
+        
         self.num_classes = 1 ## one for presence
         self.num_classes_list = [1]
         for name in self.label_types: 
             logger.info('Number of {:s}: all :: {:d} to use: {:d}'.format(name, 
                 len(final_annots['all_'+name+'_labels']),len(final_annots[name+'_labels'])))
-            numc = len(final_annots[name+'_labels'])
+            # numc = len(final_annots[name+'_labels'])
+            numc = len(final_annots['all_'+name+'_labels'])
             self.num_classes_list.append(numc)
             self.num_classes += numc
         
@@ -609,16 +626,20 @@ class VideoDataset(tutils.data.Dataset):
         self.num_ego_classes = len(self.ego_classes)
 
         # counts = np.zeros((len(final_annots[self.label_types[-1] + '_labels']), num_label_type), dtype=np.int32)
-        counts = np.zeros((len(final_annots[self.label_types[0] + '_labels']) + len(final_annots[self.label_types[1] + '_labels']) +len(final_annots[self.label_types[2] + '_labels'])  , num_label_type), dtype=np.int32)
+        counts = np.zeros((22 , self.num_label_type), dtype=np.int32)
 
 
         self.video_list = []
         self.numf_list = []
         frame_level_list = []
 
+        # vidnames = sorted(database.keys())
+        # vidnames = vidnames[:1]
+        # for videoname in vidnames:
         for videoname in sorted(database.keys()):
-            # print(is_part_of_subsets(final_annots['db'][videoname]['split_ids'], self.SUBSETS))
-            if not is_part_of_subsets(final_annots['db'][videoname]['split_ids'], self.SUBSETS):
+        
+            # if not is_part_of_subsets(final_annots['db'][videoname]['split_ids'], self.SUBSETS):
+            if not list(set(final_annots["db"][videoname]["split_ids"]) & set(self.SUBSETS)):
                 continue
             
             numf = database[videoname]['numf']
@@ -710,7 +731,8 @@ class VideoDataset(tutils.data.Dataset):
         self.frame_level_list = frame_level_list
         self.all_classes = [['agent_ness']]
         for k, name in enumerate(self.label_types):
-            labels = final_annots[name+'_labels']
+            # labels = final_annots[name+'_labels']
+            labels = final_annots['all_'+name+'_labels']
             self.all_classes.append(labels)
             # self.num_classes_list.append(len(labels))
             for c, cls_ in enumerate(labels): # just to see the distribution of train and test sets
@@ -724,6 +746,11 @@ class VideoDataset(tutils.data.Dataset):
         self.num_videos = len(self.video_list)
         self.print_str = ptrstr
 
+        # choose # of source dataset length randomly from the list
+        self.ids = random.sample(self.ids, self.num_samples) if self.num_samples<len(self.ids) else self.ids
+        print('the length of ids is', len(self.ids))
+
+
     def _make_lists_road(self):
 
         self.anno_file  = os.path.join(self.root, 'road_trainval_v1.0.json')
@@ -733,28 +760,38 @@ class VideoDataset(tutils.data.Dataset):
         
         database = final_annots['db']
         
-        self.label_types =  final_annots['label_types'] #['agent', 'action', 'loc', 'duplex', 'triplet'] #
+        final_annots['all_loc_labels'] = ["VehLane", "OutgoLane", "OutgoCycLane", "IncomLane", "IncomCycLane", \
+                                          "Pav", "LftPav", "RhtPav", "Jun", "xing", "BusStop", "parking", \
+                                          "OutgoBusLane", "IncomBusLane", "LftParking", "rightParking"]
         
-        num_label_type = 5
+
+        self.label_types = ['agent', 'action', 'loc'] # final_annots['label_types'] #['agent', 'action', 'loc', 'duplex', 'triplet'] #
+        
+        self.num_label_type = len(self.label_types)
         self.num_classes = 1 ## one for presence
         self.num_classes_list = [1]
         for name in self.label_types: 
             logger.info('Number of {:s}: all :: {:d} to use: {:d}'.format(name, 
                 len(final_annots['all_'+name+'_labels']),len(final_annots[name+'_labels'])))
-            numc = len(final_annots[name+'_labels'])
+            numc = len(final_annots['all_'+name+'_labels'])
             self.num_classes_list.append(numc)
             self.num_classes += numc
         
         self.ego_classes = final_annots['av_action_labels']
         self.num_ego_classes = len(self.ego_classes)
         
-        counts = np.zeros((len(final_annots[self.label_types[-1] + '_labels']), num_label_type), dtype=np.int32)
+        # counts = np.zeros((len(final_annots[self.label_types[-1] + '_labels']), num_label_type), dtype=np.int32)
+        counts = np.zeros((22 , self.num_label_type), dtype=np.int32)
+
 
         self.video_list = []
         self.numf_list = []
         frame_level_list = []
-
+        # vidnames = sorted(database.keys())
+        # vidnames = vidnames[:2]
+        # for videoname in vidnames:
         for videoname in sorted(database.keys()):
+        
             if not is_part_of_subsets(final_annots['db'][videoname]['split_ids'], self.SUBSETS):
                 continue
             
@@ -788,7 +825,7 @@ class VideoDataset(tutils.data.Dataset):
                         box = anno['box']
                         
                         assert box[0]<box[2] and box[1]<box[3], box
-                        assert width==1920 and height==1280, (width, height, box)
+                        assert width==1280 and height==960, (width, height, box)
 
                         for bi in range(4):
                             assert 0<=box[bi]<=1.01, box
@@ -825,7 +862,7 @@ class VideoDataset(tutils.data.Dataset):
             frame_level_list.append(frame_level_annos)  
 
             ## make ids
-            start_frames = [ f for f in range(numf-self.MIN_SEQ_STEP*self.SEQ_LEN, 1,  -self.skip_step)]
+            start_frames = [ f for f in range(numf-self.MIN_SEQ_STEP*self.SEQ_LEN, 0,  -self.skip_step)]
             if self.full_test and 1 not in start_frames:
                 start_frames.append(1)
             logger.info('number of start frames: '+ str(len(start_frames)))
@@ -841,7 +878,7 @@ class VideoDataset(tutils.data.Dataset):
         self.frame_level_list = frame_level_list
         self.all_classes = [['agent_ness']]
         for k, name in enumerate(self.label_types):
-            labels = final_annots[name+'_labels']
+            labels = final_annots['all_'+name+'_labels']
             self.all_classes.append(labels)
             # self.num_classes_list.append(len(labels))
             for c, cls_ in enumerate(labels): # just to see the distribution of train and test sets
@@ -896,11 +933,13 @@ class VideoDataset(tutils.data.Dataset):
         
         if self.DATASET == 'ava':
             assert keyframe in indexs, ' keyframe is not in frame {} from startframe {} and stepsize of {}'.format(keyframe, start_frame, step_size)
+        
+        # print('dimention before', images[0].size)
         clip = self.transform(images)
+        # print('dimention after ', clip.shape)
         height, width = clip.shape[-2:]
         wh = [height, width]
-        # print('image', wh)
-        # print(rr)
+        
         if self.ANCHOR_TYPE == 'RETINA':
             for bb, boxes in enumerate(all_boxes):
                 if boxes.shape[0]>0:
@@ -912,7 +951,12 @@ class VideoDataset(tutils.data.Dataset):
                     boxes[:, 1] *= height # height y1
                     boxes[:, 3] *= height # height y2
 
-        return clip, all_boxes, labels, ego_labels, index, wh, self.num_classes
+        if self.DATASET == 'road':
+            domain_label = [0] * len(ego_labels)
+        elif self.DATASET == 'roadpp':
+            domain_label = [1] * len(ego_labels)
+
+        return clip, all_boxes, labels, ego_labels, index, wh, self.num_classes, domain_label
 
 
 def custum_collate(batch):
@@ -923,6 +967,7 @@ def custum_collate(batch):
     ego_targets = []
     image_ids = []
     whs = []
+    domain_labels = []
     
     for sample in batch:
         images.append(sample[0])
@@ -932,6 +977,7 @@ def custum_collate(batch):
         image_ids.append(sample[4])
         whs.append(torch.LongTensor(sample[5]))
         num_classes = sample[6]
+        domain_labels.append(torch.LongTensor(sample[7]))
         
     counts = []
     max_len = -1
@@ -959,4 +1005,4 @@ def custum_collate(batch):
     images = get_clip_list_resized(images)
     # print(images.shape)
     return images, new_boxes, new_targets, torch.stack(ego_targets,0), \
-            torch.LongTensor(counts), image_ids, torch.stack(whs,0)
+            torch.LongTensor(counts), image_ids, torch.stack(whs,0),  torch.stack(domain_labels,0)

@@ -77,7 +77,7 @@ def copy_source(source_dir):
 
 
 def set_args(args):
-    args.MAX_SIZE = int(args.MIN_SIZE*1.35)
+    # args.MAX_SIZE = int(args.MIN_SIZE*1.35)
     args.MILESTONES = [int(val) for val in args.MILESTONES.split(',')]
     #args.GAMMAS = [float(val) for val in args.GAMMAS.split(',')]
     args.EVAL_EPOCHS = [int(val) for val in args.EVAL_EPOCHS.split(',')]
@@ -138,7 +138,7 @@ def create_exp_name(args):
     splits = ''.join([split[0]+split[-1] for split in args.TRAIN_SUBSETS])
     args.exp_name = '{:s}{:s}{:d}-P{:s}-b{:0d}s{:d}x{:d}x{:d}-{:s}{:s}-h{:d}x{:d}x{:d}'.format(
         args.ARCH, args.MODEL_TYPE,
-        args.MIN_SIZE, args.model_init, args.BATCH_SIZE,
+        args.MAX_SIZE, args.model_init, args.BATCH_SIZE,
         args.SEQ_LEN, args.MIN_SEQ_STEP, args.MAX_SEQ_STEP,
         args.DATASET, splits, 
         args.HEAD_LAYERS, args.CLS_HEAD_TIME_SIZE,

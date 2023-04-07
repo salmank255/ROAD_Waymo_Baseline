@@ -41,12 +41,12 @@ def train(args, net, train_dataset, val_dataset):
         log_dir = '{:s}/tboard-{}-{date:%m-%d-%Hx}'.format(args.log_dir, args.MODE, date=datetime.datetime.now())
         args.sw = SummaryWriter(log_dir)
 
-    logger.info(str(net))
-    logger.info(solver_print_str)
+    # logger.info(str(net))
+    # logger.info(solver_print_str)
 
 
-    logger.info(train_dataset.print_str)
-    logger.info(val_dataset.print_str)
+    # logger.info(train_dataset.print_str)
+    # logger.info(val_dataset.print_str)
     epoch_size = len(train_dataset) // args.BATCH_SIZE
     args.MAX_ITERS = args.MAX_EPOCHS*epoch_size
 
@@ -90,18 +90,22 @@ def run_train(args, train_data_loader, net, optimizer, epoch, iteration):
     losses = AverageMeter()
     loc_losses = AverageMeter()
     cls_losses = AverageMeter()
+    domain_losses = AverageMeter()
     torch.cuda.synchronize()
     start = time.perf_counter()
 
-    for internel_iter, (images, gt_boxes, gt_labels, ego_labels, counts, img_indexs, wh) in enumerate(train_data_loader):
+    for internel_iter, (images, gt_boxes, gt_labels, ego_labels, counts, img_indexs, wh, domain_labels) in enumerate(train_data_loader):
         iteration += 1
         # if internel_iter > 20:
         #     break
+        # print(images.shape)
         images = images.cuda(0, non_blocking=True)
         gt_boxes = gt_boxes.cuda(0, non_blocking=True)
         gt_labels = gt_labels.cuda(0, non_blocking=True)
         counts = counts.cuda(0, non_blocking=True)
         ego_labels = ego_labels.cuda(0, non_blocking=True)
+        domain_labels = domain_labels.cuda(0, non_blocking=True)
+
         # forward
         torch.cuda.synchronize()
         data_time.update(time.perf_counter() - start)
@@ -109,15 +113,19 @@ def run_train(args, train_data_loader, net, optimizer, epoch, iteration):
         # print(images.size(), anchors.size())
         optimizer.zero_grad()
         # pdb.set_trace()
-        loss_l, loss_c = net(images, gt_boxes, gt_labels, ego_labels, counts, img_indexs)
-        loss_l, loss_c = loss_l.mean(), loss_c.mean()
-        loss = loss_l + loss_c
+        # loss_l, loss_c, loss_d = net(images, gt_boxes, gt_labels, ego_labels, domain_labels, counts, img_indexs)
+        # loss_l, loss_c, loss_d = loss_l.mean(), loss_c.mean(), loss_d.mean()
+        # loss = loss_l + loss_c + loss_d
+        loss_l, loss_c= net(images, gt_boxes, gt_labels, ego_labels, domain_labels, counts, img_indexs)
+        loss_l, loss_c= loss_l.mean(), loss_c.mean()
+        loss = loss_l + loss_c 
 
         loss.backward()
         optimizer.step()
         
         loc_loss = loss_l.item()
         conf_loss = loss_c.item()
+        # domain_loss = loss_d.item()
         if math.isnan(loc_loss) or loc_loss>300:
             lline = '\n\n\n We got faulty LOCATION loss {} {} \n\n\n'.format(loc_loss, conf_loss)
             logger.info(lline)
@@ -129,7 +137,10 @@ def run_train(args, train_data_loader, net, optimizer, epoch, iteration):
         
         loc_losses.update(loc_loss)
         cls_losses.update(conf_loss)
+        # domain_losses.update(domain_loss)
+        # losses.update((loc_loss + conf_loss + domain_loss)/3.0)
         losses.update((loc_loss + conf_loss)/2.0)
+
 
         torch.cuda.synchronize()
         batch_time.update(time.perf_counter() - start)
@@ -140,6 +151,7 @@ def run_train(args, train_data_loader, net, optimizer, epoch, iteration):
                 loss_group = dict()
                 loss_group['Classification'] = cls_losses.val
                 loss_group['Localisation'] = loc_losses.val
+                loss_group['Domain'] = domain_losses.val
                 loss_group['Overall'] = losses.val
                 args.sw.add_scalars('Losses', loss_group, iteration)
 

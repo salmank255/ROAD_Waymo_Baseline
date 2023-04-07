@@ -61,7 +61,7 @@ def validate(args, net,  val_data_loader, val_dataset, iteration_num):
 
     net.eval()
     with torch.no_grad():
-        for val_itr, (images, gt_boxes, gt_targets, ego_labels, batch_counts, img_indexs, wh) in enumerate(val_data_loader):
+        for val_itr, (images, gt_boxes, gt_targets, ego_labels, batch_counts, img_indexs, wh, domain_labels) in enumerate(val_data_loader):
             
             
             # if args.DATASET == 'ava':
