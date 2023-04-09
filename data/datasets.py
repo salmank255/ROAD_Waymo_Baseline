@@ -692,11 +692,11 @@ class VideoDataset(tutils.data.Dataset):
                         for idx, name in enumerate(self.label_types):
                             # print(idx,name)
                             # filtered_ids = filter_labels(anno[name+'_ids'], final_annots['all_'+name+'_labels'], final_annots[name+'_labels'])
-                            if name == 'loc':
-                                r2rpp_map = {0:0, 1:1, 2:2, 3:4, 4:5, 5:7, 6:8, 7:9, 8:10, 9:11, 10:12, 11:13}
-                                filtered_ids = [r2rpp_map[lab_ind] for lab_ind in anno[name+'_ids']]
-                            else:
-                                filtered_ids = anno[name+'_ids']
+                            # if name == 'loc':
+                            #     r2rpp_map = {0:0, 1:1, 2:2, 3:4, 4:5, 5:7, 6:8, 7:9, 8:10, 9:11, 10:12, 11:13}
+                            #     filtered_ids = [r2rpp_map[lab_ind] for lab_ind in anno[name+'_ids']]
+                            # else:
+                            filtered_ids = anno[name+'_ids']
                             list_box_labels.append(filtered_ids)
                             for fid in filtered_ids:
                                 box_labels[fid+cc] = 1

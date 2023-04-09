@@ -221,7 +221,7 @@ def main():
         logger.info('number of classes: {}'.format(train_s_dataset.num_classes))
         logger.info(train_s_dataset.print_str)
 
-        args.num_samples = len(train_s_dataset)
+        args.num_samples = 200000 # len(train_s_dataset)
         args.DATASET = 'roadpp'
         args.SUBSETS = ['train']
         train_t_dataset = VideoDataset(args, train=True, skip_step=train_skip_step, transform=train_transform)
