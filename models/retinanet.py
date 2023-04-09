@@ -87,18 +87,21 @@ class RetinaNet(nn.Module):
         nn.init.constant_(self.ego_head.bias, bias_value)
 
         # for domain classification adaptation
-        # num_domains = 2
-        # self.domain_head = nn.Sequential(
-        #     RevGrad(),
-        #     nn.Conv3d(self.head_size, 256, kernel_size=(3, 1, 1), padding=(1, 0, 0)),
-        #     nn.BatchNorm3d(256),
-        #     nn.ReLU(inplace=True),
-        #     nn.AdaptiveAvgPool3d((1, 1, 1)),
-        #     nn.Flatten(),
-        #     nn.Linear(256, self.SEQ_LEN*num_domains),
-        #     nn.Unflatten(-1, (self.SEQ_LEN, num_domains)), # smart trick to make a 1d vector into 2d 
-        #     nn.Sigmoid()
-        # )
+        num_domains = 2
+        self.domain_head = nn.Sequential(
+            RevGrad(),
+            nn.Conv3d(self.head_size, 256, kernel_size=(3, 1, 1), padding=(1, 0, 0)),
+            nn.BatchNorm3d(256),
+            nn.ReLU(inplace=True),
+            nn.AdaptiveAvgPool3d((1, 1, 1)),
+            nn.Flatten(),
+            nn.Linear(256, 20),
+            nn.ReLU(),
+            nn.Linear(20, 1),
+            # nn.Linear(256, self.SEQ_LEN),
+            # nn.Unflatten(-1, (self.SEQ_LEN)), # smart trick to make a 1d vector into 2d 
+            # nn.Sigmoid()
+        )
         
         
         # self.domain_head = nn.Conv3d(self.head_size, num_domains, kernel_size=(
@@ -116,9 +119,14 @@ class RetinaNet(nn.Module):
         # of frames x number of domains. We predict a domain label for each frame rather than for each clip or sample.
         # domain_preds = self.domain_head(
         #     ego_feat).squeeze(-1).squeeze(-1).permute(0, 2, 1).contiguous()
-        # domain_preds = self.domain_head(ego_feat)
-        
+        domain_preds = self.domain_head(ego_feat).squeeze(0) # 1
+        # print('domain_preds', domain_preds, domain_labels)
+        # domain_preds = domain_preds.squeeze(-1) # 1 * seq_len
         grid_sizes = [feature_map.shape[-2:] for feature_map in sources]
+        # print(len(sources), ego_feat.shape, domain_preds.shape)
+        # print('domain_preds', domain_preds, domain_labels)
+        # for i in range(len(sources)):
+        #     print(sources[i].shape)
         ancohor_boxes = self.anchors(grid_sizes)
         
         loc = list()
@@ -133,12 +141,12 @@ class RetinaNet(nn.Module):
 
         flat_loc = loc.view(loc.size(0), loc.size(1), -1, 4)
         flat_conf = conf.view(conf.size(0), conf.size(1), -1, self.num_classes)
-
+        # print(flat_loc.shape, flat_conf.shape)
         # pdb.set_trace()
         if get_features:  # testing mode with feature return
             return flat_conf, features
         elif gt_boxes is not None:  # training mode
-            return self.criterion(flat_conf, flat_loc, gt_boxes, gt_labels, counts, ancohor_boxes, ego_preds, ego_labels) #, domain_preds, domain_labels
+            return self.criterion(flat_conf, flat_loc, gt_boxes, gt_labels, counts, ancohor_boxes, ego_preds, ego_labels, domain_preds, domain_labels) #, 
         else:  # otherwise testing mode
             decoded_boxes = []
             for b in range(flat_loc.shape[0]):

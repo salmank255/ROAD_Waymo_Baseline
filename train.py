@@ -14,7 +14,7 @@ from modules import utils
 logger = utils.get_logger(__name__)
 
 
-def train(args, net, train_dataset, val_dataset):
+def train(args, net, train_s_dataset, train_t_dataset, val_dataset):
     
     optimizer, scheduler, solver_print_str = get_optim(args, net)
 
@@ -47,7 +47,7 @@ def train(args, net, train_dataset, val_dataset):
 
     # logger.info(train_dataset.print_str)
     # logger.info(val_dataset.print_str)
-    epoch_size = len(train_dataset) // args.BATCH_SIZE
+    epoch_size = len(train_s_dataset) // args.BATCH_SIZE
     args.MAX_ITERS = args.MAX_EPOCHS*epoch_size
 
     for arg in sorted(vars(args)):
@@ -59,7 +59,10 @@ def train(args, net, train_dataset, val_dataset):
     logger.info('Training FPN with {} + {} as backbone '.format(args.ARCH, args.MODEL_TYPE))
 
 
-    train_data_loader = data_utils.DataLoader(train_dataset, args.BATCH_SIZE, num_workers=args.NUM_WORKERS,
+    train_s_loader = data_utils.DataLoader(train_s_dataset, args.BATCH_SIZE//2, num_workers=args.NUM_WORKERS,
+                                  shuffle=True, pin_memory=True, collate_fn=custum_collate, drop_last=True)
+    
+    train_t_loader = data_utils.DataLoader(train_t_dataset, args.BATCH_SIZE//2, num_workers=args.NUM_WORKERS,
                                   shuffle=True, pin_memory=True, collate_fn=custum_collate, drop_last=True)
     
     val_data_loader = data_utils.DataLoader(val_dataset, args.BATCH_SIZE, num_workers=args.NUM_WORKERS,
@@ -70,6 +73,8 @@ def train(args, net, train_dataset, val_dataset):
     for epoch in range(args.START_EPOCH, args.MAX_EPOCHS + 1):
         net.train()
         
+        train_data_loader = zip(train_s_loader, train_t_loader)
+
         if args.FBN:
             if args.MULTI_GPUS:
                 net.module.backbone.apply(utils.set_bn_eval)
@@ -94,17 +99,28 @@ def run_train(args, train_data_loader, net, optimizer, epoch, iteration):
     torch.cuda.synchronize()
     start = time.perf_counter()
 
-    for internel_iter, (images, gt_boxes, gt_labels, ego_labels, counts, img_indexs, wh, domain_labels) in enumerate(train_data_loader):
+    for internel_iter, ((images_s, gt_boxes, gt_labels, ego_labels, counts, img_indexs, wh_s),\
+                        (images_t, _, _, _, _, _, wh_t)) in enumerate(train_data_loader):
         iteration += 1
         # if internel_iter > 20:
         #     break
-        # print(images.shape)
+        # print(len(images_s), len(images_t))
+        # road_indices = torch.where((domain_labels == 0).all(dim=1))[0]
+        # print('road_indices', road_indices)
+        images = torch.cat((images_s, images_t), dim=0) # batch_size, C, N, H, W
         images = images.cuda(0, non_blocking=True)
+        # print('images_s', images_s.shape)
+        domain_y = torch.cat((torch.ones(images_s.shape[0]), # , images_s.shape[2]
+                              torch.zeros(images_t.shape[0])), dim=0) # seq_len
+        # print('domain_y', domain_y.shape, domain_y)
+        domain_y = domain_y.cuda(0, non_blocking=True)
+
+
         gt_boxes = gt_boxes.cuda(0, non_blocking=True)
         gt_labels = gt_labels.cuda(0, non_blocking=True)
         counts = counts.cuda(0, non_blocking=True)
         ego_labels = ego_labels.cuda(0, non_blocking=True)
-        domain_labels = domain_labels.cuda(0, non_blocking=True)
+        # domain_labels = domain_labels.cuda(0, non_blocking=True)
 
         # forward
         torch.cuda.synchronize()
@@ -113,19 +129,19 @@ def run_train(args, train_data_loader, net, optimizer, epoch, iteration):
         # print(images.size(), anchors.size())
         optimizer.zero_grad()
         # pdb.set_trace()
-        # loss_l, loss_c, loss_d = net(images, gt_boxes, gt_labels, ego_labels, domain_labels, counts, img_indexs)
-        # loss_l, loss_c, loss_d = loss_l.mean(), loss_c.mean(), loss_d.mean()
-        # loss = loss_l + loss_c + loss_d
-        loss_l, loss_c= net(images, gt_boxes, gt_labels, ego_labels, domain_labels, counts, img_indexs)
-        loss_l, loss_c= loss_l.mean(), loss_c.mean()
-        loss = loss_l + loss_c 
+        loss_l, loss_c, loss_d = net(images, gt_boxes, gt_labels, ego_labels, domain_y, counts, img_indexs)
+        loss_l, loss_c, loss_d = loss_l.mean(), loss_c.mean(), loss_d.mean()
+        loss = loss_l + loss_c + loss_d
+        # loss_l, loss_c= net(images, gt_boxes, gt_labels, ego_labels, domain_labels, counts, img_indexs)
+        # loss_l, loss_c= loss_l.mean(), loss_c.mean()
+        # loss = loss_l + loss_c 
 
         loss.backward()
         optimizer.step()
         
         loc_loss = loss_l.item()
         conf_loss = loss_c.item()
-        # domain_loss = loss_d.item()
+        domain_loss = loss_d.item()
         if math.isnan(loc_loss) or loc_loss>300:
             lline = '\n\n\n We got faulty LOCATION loss {} {} \n\n\n'.format(loc_loss, conf_loss)
             logger.info(lline)
@@ -138,8 +154,8 @@ def run_train(args, train_data_loader, net, optimizer, epoch, iteration):
         loc_losses.update(loc_loss)
         cls_losses.update(conf_loss)
         # domain_losses.update(domain_loss)
-        # losses.update((loc_loss + conf_loss + domain_loss)/3.0)
-        losses.update((loc_loss + conf_loss)/2.0)
+        losses.update((loc_loss + conf_loss + domain_loss)/3.0)
+        # losses.update((loc_loss + conf_loss)/2.0)
 
 
         torch.cuda.synchronize()
@@ -156,9 +172,9 @@ def run_train(args, train_data_loader, net, optimizer, epoch, iteration):
                 args.sw.add_scalars('Losses', loss_group, iteration)
 
             print_line = 'Itration [{:d}/{:d}]{:06d}/{:06d} loc-loss {:.2f}({:.2f}) cls-loss {:.2f}({:.2f}) ' \
-                        'average-loss {:.2f}({:.2f}) DataTime {:0.2f}({:0.2f}) Timer {:0.2f}({:0.2f})'.format( epoch, 
+                        'dom-loss {:.2f}({:.2f}) average-loss {:.2f}({:.2f}) DataTime {:0.2f}({:0.2f}) Timer {:0.2f}({:0.2f})'.format( epoch, 
                         args.MAX_EPOCHS, iteration, args.MAX_ITERS, loc_losses.val, loc_losses.avg, cls_losses.val,
-                        cls_losses.avg, losses.val, losses.avg, 10*data_time.val, 10*data_time.avg, 10*batch_time.val, 10*batch_time.avg)
+                        cls_losses.avg, domain_losses.val, domain_losses.avg, losses.val, losses.avg, 10*data_time.val, 10*data_time.avg, 10*batch_time.val, 10*batch_time.avg)
 
             logger.info(print_line)
             if internel_iter % (args.LOG_STEP*20) == 0:

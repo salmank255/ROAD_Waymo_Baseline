@@ -62,10 +62,10 @@ class FocalLoss(nn.Module):
         self.gamma = 2.0
         
         # for domain classification adaptation
-        self.domain_loss_fn = nn.CrossEntropyLoss() # nn.BCELoss # nn.CrossEntropyLoss()
+        self.domain_loss_fn = nn.BCEWithLogitsLoss() # nn.BCELoss # nn.CrossEntropyLoss()
 
 
-    def forward(self, confidence, predicted_locations, gt_boxes, gt_labels, counts, anchors, ego_preds, ego_labels): #, domain_preds, domain_labels
+    def forward(self, confidence, predicted_locations, gt_boxes, gt_labels, counts, anchors, ego_preds, ego_labels, domain_preds, domain_labels): #
         ## gt_boxes, gt_labels, counts, ancohor_boxes
         
         """
@@ -167,7 +167,7 @@ class FocalLoss(nn.Module):
         
         # for domain classification adaptation
         # domain_labels = F.one_hot(domain_labels, num_classes=2).float()
-        # domain_loss = self.domain_loss_fn(domain_preds, domain_labels)
+        domain_loss = self.domain_loss_fn(domain_preds, domain_labels)
         
         # print(regression_loss, cls_loss, ego_loss)
-        return regression_loss, cls_loss/8.0 + ego_loss/4.0 #, domain_loss
+        return regression_loss, cls_loss/8.0 + ego_loss/4.0 , domain_loss

@@ -232,7 +232,7 @@ def main():
 
         # road = train_s_dataset[0]
         # roadpp = train_t_dataset[0]
-        train_st_dataset = ConcatDataset([train_s_dataset, train_t_dataset])
+        # train_st_dataset = ConcatDataset([train_s_dataset, train_t_dataset])
         # combined = train_st_dataset[0]
         # print(len(train_st_dataset), combined[0].shape, train_t_dataset.num_label_type)
 
@@ -292,7 +292,7 @@ def main():
     # val_t_dataset = Subset(val_t_dataset, range(len(val_s_dataset)))
     logger.info('Done Loading Target ({}) Validation Dataset'.format(args.DATASET))
 
-    val_st_dataset = ConcatDataset([val_s_dataset, val_t_dataset])
+    # val_st_dataset = ConcatDataset([val_s_dataset, val_t_dataset])
 
     # logger.info('Train {} Dataset Size: {}'.format('road', len(train_s_dataset)))
     # logger.info('Train {} Dataset Size: {}'.format('roadpp', len(train_t_dataset)))
@@ -327,9 +327,9 @@ def main():
                 net.module.backbone.apply(utils.set_bn_eval)
             else:
                 net.backbone.apply(utils.set_bn_eval)
-        train(args, net, train_st_dataset, val_st_dataset)
-    elif args.MODE == 'val':
-        val(args, net, val_st_dataset)
+        train(args, net, train_s_dataset, train_t_dataset, val_t_dataset)
+    # elif args.MODE == 'val':
+    #     val(args, net, val_st_dataset)
     # elif args.MODE == 'gen_dets':
     #     gen_dets(args, net, val_s_dataset)
     #     eval_framewise_dets(args, val_s_dataset)

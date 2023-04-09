@@ -216,11 +216,14 @@ def resize(image, size):
 def filter_labels(ids, all_labels, used_labels):
     """Filter the used ids"""
     used_ids = []
+    # for id in ids:
+    #     label = all_labels[id]
+    #     if label in used_labels:
+    #         used_ids.append(used_labels.index(label))
     for id in ids:
-        label = all_labels[id]
-        if label in used_labels:
-            used_ids.append(used_labels.index(label))
-    
+        label = used_labels[id]
+        used_ids.append(all_labels.index(label))
+        
     return used_ids
 
 def get_gt_video_list(anno_file, SUBSETS):
@@ -688,7 +691,12 @@ class VideoDataset(tutils.data.Dataset):
                         cc = 1
                         for idx, name in enumerate(self.label_types):
                             # print(idx,name)
-                            filtered_ids = filter_labels(anno[name+'_ids'], final_annots['all_'+name+'_labels'], final_annots[name+'_labels'])
+                            # filtered_ids = filter_labels(anno[name+'_ids'], final_annots['all_'+name+'_labels'], final_annots[name+'_labels'])
+                            if name == 'loc':
+                                r2rpp_map = {0:0, 1:1, 2:2, 3:4, 4:5, 5:7, 6:8, 7:9, 8:10, 9:11, 10:12, 11:13}
+                                filtered_ids = [r2rpp_map[lab_ind] for lab_ind in anno[name+'_ids']]
+                            else:
+                                filtered_ids = anno[name+'_ids']
                             list_box_labels.append(filtered_ids)
                             for fid in filtered_ids:
                                 box_labels[fid+cc] = 1
@@ -739,16 +747,16 @@ class VideoDataset(tutils.data.Dataset):
                 ptrstr += '-'.join(self.SUBSETS) + ' {:05d} label: ind={:02d} name:{:s}\n'.format(
                                                 counts[c,k] , c, cls_)
         
-        ptrstr += 'Number of ids are {:d}\n'.format(len(self.ids))
 
         self.label_types = ['agent_ness'] + self.label_types
         self.childs = {'duplex_childs':final_annots['duplex_childs'], 'triplet_childs':final_annots['triplet_childs']}
         self.num_videos = len(self.video_list)
-        self.print_str = ptrstr
+        
 
         # choose # of source dataset length randomly from the list
         self.ids = random.sample(self.ids, self.num_samples) if self.num_samples<len(self.ids) else self.ids
-        print('the length of ids is', len(self.ids))
+        ptrstr += 'Number of ids are {:d}\n'.format(len(self.ids))
+        self.print_str = ptrstr
 
 
     def _make_lists_road(self):
@@ -760,9 +768,7 @@ class VideoDataset(tutils.data.Dataset):
         
         database = final_annots['db']
         
-        final_annots['all_loc_labels'] = ["VehLane", "OutgoLane", "OutgoCycLane", "IncomLane", "IncomCycLane", \
-                                          "Pav", "LftPav", "RhtPav", "Jun", "xing", "BusStop", "parking", \
-                                          "OutgoBusLane", "IncomBusLane", "LftParking", "rightParking"]
+        final_annots['all_loc_labels'] = ["VehLane", "OutgoLane", "OutgoCycLane", "OutgoBusLane", "IncomLane", "IncomCycLane", "IncomBusLane", "Pav", "LftPav", "RhtPav", "Jun", "xing", "BusStop", "parking", "LftParking", "rightParking"]
         
 
         self.label_types = ['agent', 'action', 'loc'] # final_annots['label_types'] #['agent', 'action', 'loc', 'duplex', 'triplet'] #
@@ -836,7 +842,16 @@ class VideoDataset(tutils.data.Dataset):
                         list_box_labels = []
                         cc = 1
                         for idx, name in enumerate(self.label_types):
-                            filtered_ids = filter_labels(anno[name+'_ids'], final_annots['all_'+name+'_labels'], final_annots[name+'_labels'])
+                            # filtered_ids = filter_labels(anno[name+'_ids'], final_annots['all_'+name+'_labels'], final_annots[name+'_labels'])
+                            filtered_ids = anno[name+'_ids'] 
+                            if name == 'loc':
+                                r2rpp_map = {0:0, 1:1, 2:2, 3:4, 4:5, 5:7, 6:8, 7:9, 8:10, 9:11, 10:12, 11:13}
+                                filtered_ids = [r2rpp_map[lab_ind] for lab_ind in anno[name+'_ids']]
+                            if name == 'action':
+                                if 6 in filtered_ids: filtered_ids.remove(6)
+                                if 14 in filtered_ids: filtered_ids.remove(14)
+                                if 15 in filtered_ids: filtered_ids.remove(15)
+                                
                             list_box_labels.append(filtered_ids)
                             for fid in filtered_ids:
                                 box_labels[fid+cc] = 1
@@ -885,7 +900,7 @@ class VideoDataset(tutils.data.Dataset):
                 ptrstr += '-'.join(self.SUBSETS) + ' {:05d} label: ind={:02d} name:{:s}\n'.format(
                                                 counts[c,k] , c, cls_)
         
-        ptrstr += 'Number of ids are {:d}\n'.format(len(self.ids))
+        ptrstr += 'Number of ids is {:d}\n'.format(len(self.ids))
 
         self.label_types = ['agent_ness'] + self.label_types
         self.childs = {'duplex_childs':final_annots['duplex_childs'], 'triplet_childs':final_annots['triplet_childs']}
@@ -951,12 +966,12 @@ class VideoDataset(tutils.data.Dataset):
                     boxes[:, 1] *= height # height y1
                     boxes[:, 3] *= height # height y2
 
-        if self.DATASET == 'road':
-            domain_label = [0] * len(ego_labels)
-        elif self.DATASET == 'roadpp':
-            domain_label = [1] * len(ego_labels)
+        # if self.DATASET == 'road':
+        #     domain_label = [0] * len(ego_labels)
+        # elif self.DATASET == 'roadpp':
+        #     domain_label = [1] * len(ego_labels)
 
-        return clip, all_boxes, labels, ego_labels, index, wh, self.num_classes, domain_label
+        return clip, all_boxes, labels, ego_labels, index, wh, self.num_classes #, domain_label
 
 
 def custum_collate(batch):
@@ -967,7 +982,7 @@ def custum_collate(batch):
     ego_targets = []
     image_ids = []
     whs = []
-    domain_labels = []
+    # domain_labels = []
     
     for sample in batch:
         images.append(sample[0])
@@ -977,7 +992,7 @@ def custum_collate(batch):
         image_ids.append(sample[4])
         whs.append(torch.LongTensor(sample[5]))
         num_classes = sample[6]
-        domain_labels.append(torch.LongTensor(sample[7]))
+        # domain_labels.append(torch.LongTensor(sample[7]))
         
     counts = []
     max_len = -1
@@ -1005,4 +1020,4 @@ def custum_collate(batch):
     images = get_clip_list_resized(images)
     # print(images.shape)
     return images, new_boxes, new_targets, torch.stack(ego_targets,0), \
-            torch.LongTensor(counts), image_ids, torch.stack(whs,0),  torch.stack(domain_labels,0)
+            torch.LongTensor(counts), image_ids, torch.stack(whs,0) #,  torch.stack(domain_labels,0)
