@@ -64,7 +64,7 @@ def main():
     parser.add_argument('--TEST_SUBSETS', default='', 
                         type=str,help='Testing SUBSETS seprated by ,')
     # Input size of image only 600 is supprted at the moment 
-    parser.add_argument('--MAX_SIZE', default=960, 
+    parser.add_argument('--MIN_SIZE', default=960, 
                         type=int, help='Input Size for FPN')
     
     #  data loading argumnets
@@ -199,7 +199,7 @@ def main():
 
     if args.MODE in ['train','val']:
         # args.CONF_THRESH = 0.05
-        args.MIN_SIZE = int(args.MAX_SIZE /1.33333)
+        args.MAX_SIZE = int(args.MIN_SIZE * 1.33333)
         args.SUBSETS = args.TRAIN_SUBSETS
         train_transform = transforms.Compose([
                             vtf.ResizeClip_DA(args.MIN_SIZE, args.MAX_SIZE),
@@ -221,7 +221,7 @@ def main():
         logger.info('number of classes: {}'.format(train_s_dataset.num_classes))
         logger.info(train_s_dataset.print_str)
 
-        args.num_samples = 200000 # len(train_s_dataset)
+        args.num_samples = len(train_s_dataset)
         args.DATASET = 'roadpp'
         args.SUBSETS = ['train']
         train_t_dataset = VideoDataset(args, train=True, skip_step=train_skip_step, transform=train_transform)

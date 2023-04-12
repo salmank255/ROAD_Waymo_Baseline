@@ -129,8 +129,19 @@ def run_train(args, train_data_loader, net, optimizer, epoch, iteration):
         # print(images.size(), anchors.size())
         optimizer.zero_grad()
         # pdb.set_trace()
+        # print('domain_y', domain_y)
+        # if domain_y == 0:
+        #     loss_d_t = net(images, gt_boxes, gt_labels, ego_labels, domain_y, counts, img_indexs)
+        #     loss_d_t = loss_d.mean()
+            # loss = loss_d
+            # loss.backward()
+            # optimizer.step()
+            # domain_loss = loss_d.item()
+            # domain_losses.update(domain_loss)
+            # losses.update(domain_loss)
         loss_l, loss_c, loss_d = net(images, gt_boxes, gt_labels, ego_labels, domain_y, counts, img_indexs)
         loss_l, loss_c, loss_d = loss_l.mean(), loss_c.mean(), loss_d.mean()
+        # loss_d = (loss_d_t + loss_d_s)/2
         loss = loss_l + loss_c + loss_d
         # loss_l, loss_c= net(images, gt_boxes, gt_labels, ego_labels, domain_labels, counts, img_indexs)
         # loss_l, loss_c= loss_l.mean(), loss_c.mean()
@@ -153,7 +164,7 @@ def run_train(args, train_data_loader, net, optimizer, epoch, iteration):
         
         loc_losses.update(loc_loss)
         cls_losses.update(conf_loss)
-        # domain_losses.update(domain_loss)
+        domain_losses.update(domain_loss)
         losses.update((loc_loss + conf_loss + domain_loss)/3.0)
         # losses.update((loc_loss + conf_loss)/2.0)
 

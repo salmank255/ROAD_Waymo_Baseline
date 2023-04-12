@@ -111,6 +111,12 @@ class RetinaNet(nn.Module):
     def forward(self, images, gt_boxes=None, gt_labels=None, ego_labels=None, domain_labels=None, counts=None, img_indexs=None, get_features=False):
         sources, ego_feat = self.backbone(images)
         
+        if domain_labels == 0:
+            domain_preds = self.domain_head(ego_feat).squeeze(0)
+            domain_loss_fn = nn.BCEWithLogitsLoss()
+            domain_loss = domain_loss_fn(domain_preds, domain_labels)
+            return 0, 0, domain_loss
+            
         ego_preds = self.ego_head(
             ego_feat).squeeze(-1).squeeze(-1).permute(0, 2, 1).contiguous()
 
