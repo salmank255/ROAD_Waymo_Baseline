@@ -590,9 +590,8 @@ class VideoDataset(tutils.data.Dataset):
         
         database = final_annots['db']
         
-        # self.label_types =  final_annots['label_types'] #['agent', 'action', 'loc', 'duplex', 'triplet'] #
-        
-        self.label_types = ['agent', 'action', 'loc'] #
+        self.label_types =  final_annots['label_types'] #['agent', 'action', 'loc', 'duplex', 'triplet'] #
+        # self.label_types = ['agent', 'action', 'loc'] #
         # print(self.label_types)
         # print(rr)
 
@@ -609,8 +608,8 @@ class VideoDataset(tutils.data.Dataset):
         self.ego_classes = final_annots['av_action_labels']
         self.num_ego_classes = len(self.ego_classes)
 
-        # counts = np.zeros((len(final_annots[self.label_types[-1] + '_labels']), num_label_type), dtype=np.int32)
-        counts = np.zeros((len(final_annots[self.label_types[0] + '_labels']) + len(final_annots[self.label_types[1] + '_labels']) +len(final_annots[self.label_types[2] + '_labels'])  , num_label_type), dtype=np.int32)
+        counts = np.zeros((len(final_annots[self.label_types[-1] + '_labels']), num_label_type), dtype=np.int32)
+        # counts = np.zeros((len(final_annots[self.label_types[0] + '_labels']) + len(final_annots[self.label_types[1] + '_labels']) +len(final_annots[self.label_types[2] + '_labels'])  , num_label_type), dtype=np.int32)
 
 
         self.video_list = []

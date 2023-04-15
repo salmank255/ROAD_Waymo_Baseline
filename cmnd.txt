@@ -14,7 +14,7 @@ python main.py ../ ../ kinetics-pt/ --MODE=gen_dets --ARCH=resnet101 --MODEL_TYP
 
 
 I3D
-CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python main.py ../ ../ kinetics-pt/ --MODE=train --ARCH=resnet50 --MODEL_TYPE=I3D --DATASET=roadpp --TRAIN_SUBSETS=train --VAL_SUBSETS=val --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=8 --LR=0.0041
+CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python main.py ../ ../ kinetics-pt/ --MODE=train --ARCH=resnet50 --MODEL_TYPE=I3D --DATASET=roadpp --TRAIN_SUBSETS=train --VAL_SUBSETS=val --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=8 --LR=0.0041 --MIN_SIZE=720
 python main.py ../ ../ kinetics-pt/ --MODE=gen_dets --ARCH=resnet50 --MODEL_TYPE=I3D --DATASET=roadpp --TEST_SEQ_LEN=8 --TRAIN_SUBSETS=train --TEST_SUBSETS=test --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=8 --LR=0.0011
 
 
