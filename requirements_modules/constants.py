@@ -1,5 +1,5 @@
 # CONSTANTS
-NUM_LABELS = 43 #41
+NUM_LABELS = 49 #41
 BETA = 0.1
 
 CONSTRAINTS_PATH = "requirements_modules/constraints/constraints.txt"
