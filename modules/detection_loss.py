@@ -179,7 +179,7 @@ class FocalLoss(nn.Module):
             mask = masked_preds[:,0] > self.agentness_th
             # print(masked_preds[:,0].max())
             if mask.any():
-                print(mask.sum(), masked_preds[:,0].shape)
+                # print(mask.sum(), masked_preds[:,0].shape)
                 foreground_masked_preds = masked_preds[mask]
                 # print('t-norm on {:}/{:} foreground/overall objects'.format(mask.sum(), masked_preds.shape[0]))
                 logic_based_loss = logical_requirements_loss(foreground_masked_preds, logic, Cplus, Cminus)
