@@ -170,7 +170,7 @@ def run_val(args, val_data_loader, val_dataset, net, epoch, iteration):
         all_classes = args.all_classes  # + [args.ego_classes]
         mAP_group = dict()
         
-        for nlt in range(args.num_label_types+1):
+        for nlt in range(args.num_label_types):
             for ap_str in ap_strs[nlt]:
                 logger.info(ap_str)
             ptr_str = '\n{:s} MEANAP:::=> {:0.5f}'.format(label_types[nlt], mAP[nlt])
