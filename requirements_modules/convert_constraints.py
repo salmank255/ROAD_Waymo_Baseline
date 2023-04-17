@@ -64,18 +64,24 @@ def make_indexed_constraints_set(indexed_label_order, readable_constraints):
     s = ''
     indexed_constraints = []
     for (read_head, read_body) in readable_constraints:
-        s += '0.0 '
         if read_head[1] not in indexed_label_order:
-            indexed_label_order[read_head[1]] = len(indexed_label_order)
-
+            continue
+            # indexed_label_order[read_head[1]] = len(indexed_label_order)
         head = str(indexed_label_order[read_head[1]]) if read_head[0] == 'pos' else 'n' + str(indexed_label_order[read_head[1]])
-        s += head + ' :-'
+        line = '0.0 ' + head + ' :-'
         for elem in read_body:
-            s += ' '
             if elem[1] not in indexed_label_order:
-                indexed_label_order[elem[1]] = len(indexed_label_order)
-            s += str(indexed_label_order[elem[1]]) if elem[0] == 'pos' else 'n' + str(indexed_label_order[elem[1]])
-        s += '\n'
+                continue
+                # indexed_label_order[elem[1]] = len(indexed_label_order)
+            line += ' '
+            line += str(indexed_label_order[elem[1]]) if elem[0] == 'pos' else 'n' + str(indexed_label_order[elem[1]])
+        line += '\n'
+        print(line.strip().split(':-')[-1] == '')
+        if line.strip().split(':-')[-1] == '':
+            continue
+        s += line
+
+    s = s[:-1]
     with open('constraints/roadpp_indexed_constraints.txt', 'w') as g:
         g.write(s)
     print(len(indexed_label_order))
