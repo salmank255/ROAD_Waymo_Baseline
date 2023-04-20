@@ -1,10 +1,17 @@
 import os
 readable_constraints_file = 'constraints/readable_constraints.txt'
-label_order = ['Ped', 'Car', 'Mobike', 'SmalVeh', 'MedVeh', 'LarVeh', 'Bus', 'EmVeh'] + \
-              ['MovAway', 'MovTow', 'Mov', 'Rev', 'Brake', 'Stop', 'IncatLft', 'IncatRht', 'HazLit', 'TurLft',
-               'TurRht', 'MovRht', 'MovLft', 'Ovtak', 'Wait2X', 'XingFmLft', 'XingFmRht', 'Xing', 'PushObj'] + \
-              ['VehLane', 'OutgoLane', 'OutgoCycLane', 'OutgoBusLane', 'IncomLane', 'IncomCycLane', 'IncomBusLane',
-               'Pav', 'LftPav', 'RhtPav', 'Jun', 'xing', 'BusStop', 'parking', 'LftParking', 'rightParking']
+# label_order = ['Ped', 'Car', 'Mobike', 'SmalVeh', 'MedVeh', 'LarVeh', 'Bus', 'EmVeh'] + \
+#               ['MovAway', 'MovTow', 'Mov', 'Rev', 'Brake', 'Stop', 'IncatLft', 'IncatRht', 'HazLit', 'TurLft',
+#                'TurRht', 'MovRht', 'MovLft', 'Ovtak', 'Wait2X', 'XingFmLft', 'XingFmRht', 'Xing', 'PushObj'] + \
+#               ['VehLane', 'OutgoLane', 'OutgoCycLane', 'OutgoBusLane', 'IncomLane', 'IncomCycLane', 'IncomBusLane',
+#                'Pav', 'LftPav', 'RhtPav', 'Jun', 'xing', 'BusStop', 'parking', 'LftParking', 'rightParking']
+
+# new anno
+# label_order = ['Ped', 'Car', 'Cyc', 'Mobike', 'SmalVeh', 'MedVeh', 'LarVeh', 'Bus', 'EmVeh', 'TL', 'Red', 'Amber', 'Green', 'MovAway', 'MovTow', 'Mov', 'Rev', 'Brake', 'Stop', 'IncatLft', 'IncatRht', 'HazLit', 'TurLft', 'TurRht', 'MovRht', 'MovLft', 'Ovtak', 'Wait2X', 'XingFmLft', 'XingFmRht', 'Xing', 'PushObj', 'VehLane', 'OutgoLane', 'OutgoCycLane', 'OutgoBusLane', 'IncomLane', 'IncomCycLane', 'IncomBusLane', 'Pav', 'LftPav', 'RhtPav', 'Jun', 'xing', 'BusStop', 'parking', 'LftParking', 'rightParking']
+# remaned xing to XingLoc, but relative position is correct now!
+# with this modification only OthTL label is not used, but there are more labels added (should we change the constraints to cover these?) TODO
+label_order = ['Ped', 'Car', 'Cyc', 'Mobike', 'SmalVeh', 'MedVeh', 'LarVeh', 'Bus', 'EmVeh', 'TL', 'Red', 'Amber', 'Green', 'MovAway', 'MovTow', 'Mov', 'Rev', 'Brake', 'Stop', 'IncatLft', 'IncatRht', 'HazLit', 'TurLft', 'TurRht', 'MovRht', 'MovLft', 'Ovtak', 'Wait2X', 'XingFmLft', 'XingFmRht', 'Xing', 'PushObj', 'VehLane', 'OutgoLane', 'OutgoCycLane', 'OutgoBusLane', 'IncomLane', 'IncomCycLane', 'IncomBusLane', 'Pav', 'LftPav', 'RhtPav', 'Jun', 'XingLoc', 'BusStop', 'parking', 'LftParking', 'rightParking']
+
 indexed_label_order = {elem:i for i,elem in enumerate(label_order)}
 print(label_order, indexed_label_order, len(label_order))
 
@@ -76,13 +83,13 @@ def make_indexed_constraints_set(indexed_label_order, readable_constraints):
             line += ' '
             line += str(indexed_label_order[elem[1]]) if elem[0] == 'pos' else 'n' + str(indexed_label_order[elem[1]])
         line += '\n'
-        print(line.strip().split(':-')[-1] == '')
+        # print(line.strip().split(':-')[-1] == '')
         if line.strip().split(':-')[-1] == '':
             continue
         s += line
 
     s = s[:-1]
-    with open('constraints/roadpp_indexed_constraints.txt', 'w') as g:
+    with open('constraints/roadpp_indexed_constraints_new_anno.txt', 'w') as g:
         g.write(s)
     print(len(indexed_label_order))
 
