@@ -65,6 +65,8 @@ def main():
     # Input size of image only 600 is supprted at the moment 
     parser.add_argument('--MIN_SIZE', default=960, 
                         type=int, help='Input Size for FPN')
+    parser.add_argument('--MAX_SIZE', default=1280, 
+                        type=int, help='Input Size for FPN')
     
     #  data loading argumnets
     parser.add_argument('-b','--BATCH_SIZE', default=4, 
@@ -199,6 +201,8 @@ def main():
     if args.MODE in ['train','val']:
         # args.CONF_THRESH = 0.05
         args.SUBSETS = args.TRAIN_SUBSETS
+        
+        
         train_transform = transforms.Compose([
                             vtf.ResizeClip(args.MIN_SIZE, args.MAX_SIZE),
                             vtf.ToTensorStack(),
@@ -213,7 +217,28 @@ def main():
         else:
             train_skip_step = args.SEQ_LEN 
 
-        train_dataset = VideoDataset(args, train=True, skip_step=train_skip_step, transform=train_transform)
+        if args.DATASET == 'combine':
+            train_transform = transforms.Compose([
+                    vtf.ResizeClip_Fixed(args.MIN_SIZE, args.MAX_SIZE),
+                    vtf.ToTensorStack(),
+                    vtf.Normalize(mean=args.MEANS, std=args.STDS)])
+            road_dataset = VideoDataset(args,'road', train=True, skip_step=train_skip_step, transform=train_transform)
+            road_waymo_dataset = VideoDataset(args,'roadpp', train=True, skip_step=train_skip_step, transform=train_transform)
+            train_dataset = torch.utils.data.ConcatDataset([road_dataset,road_waymo_dataset])
+            # print(len(road_dataset))
+            # print(len(road_waymo_dataset))
+            # print(len(train_dataset))
+            
+        else:
+            train_transform = transforms.Compose([
+                    vtf.ResizeClip(args.MIN_SIZE, args.MAX_SIZE),
+                    vtf.ToTensorStack(),
+                    vtf.Normalize(mean=args.MEANS, std=args.STDS)])
+
+            train_dataset = VideoDataset(args,args.DATASET, train=True, skip_step=train_skip_step, transform=train_transform)
+
+
+
         logger.info('Done Loading Dataset Train Dataset')
         ## For validation set
         full_test = False
@@ -234,14 +259,22 @@ def main():
 
         skip_step = args.SEQ_LEN - args.skip_beggning
 
+    if args.DATASET == 'combine':
 
-    val_transform = transforms.Compose([ 
-                        vtf.ResizeClip(args.MIN_SIZE, args.MAX_SIZE),
-                        vtf.ToTensorStack(),
-                        vtf.Normalize(mean=args.MEANS,std=args.STDS)])
-    
+        val_transform = transforms.Compose([ 
+                            vtf.ResizeClip_Fixed(args.MIN_SIZE, args.MAX_SIZE),
+                            vtf.ToTensorStack(),
+                            vtf.Normalize(mean=args.MEANS,std=args.STDS)])
+        
+        val_dataset = VideoDataset(args,'roadpp', train=False, transform=val_transform, skip_step=skip_step, full_test=full_test)
+    else:
+        val_transform = transforms.Compose([ 
+                            vtf.ResizeClip(args.MIN_SIZE, args.MAX_SIZE),
+                            vtf.ToTensorStack(),
+                            vtf.Normalize(mean=args.MEANS,std=args.STDS)])
 
-    val_dataset = VideoDataset(args, train=False, transform=val_transform, skip_step=skip_step, full_test=full_test)
+        val_dataset = VideoDataset(args,args.DATASET, train=False, transform=val_transform, skip_step=skip_step, full_test=full_test)
+
     logger.info('Done Loading Dataset Validation Dataset')
 
     # resize one instance of val dataset to get wh

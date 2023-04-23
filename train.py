@@ -45,7 +45,7 @@ def train(args, net, train_dataset, val_dataset):
     logger.info(solver_print_str)
 
 
-    logger.info(train_dataset.print_str)
+    # logger.info(train_dataset.print_str)
     logger.info(val_dataset.print_str)
     epoch_size = len(train_dataset) // args.BATCH_SIZE
     args.MAX_ITERS = args.MAX_EPOCHS*epoch_size

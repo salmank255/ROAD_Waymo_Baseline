@@ -359,12 +359,17 @@ class VideoDataset(tutils.data.Dataset):
     ROAD Detection dataset class for pytorch dataloader
     """
 
-    def __init__(self, args, train=True, input_type='rgb', transform=None, 
+    def __init__(self, args,dataset, train=True, input_type='rgb', transform=None, 
                 skip_step=1, full_test=False):
 
         self.ANCHOR_TYPE =  args.ANCHOR_TYPE 
-        self.DATASET = args.DATASET
-        self.SUBSETS = args.SUBSETS
+        self.DATASET = dataset
+        
+        if self.DATASET == 'road' and args.SUBSETS == ['train']:
+            self.SUBSETS = ['train_3']
+        else:
+            self.SUBSETS = args.SUBSETS        
+
         self.SEQ_LEN = args.SEQ_LEN
         self.BATCH_SIZE = args.BATCH_SIZE
         self.MIN_SEQ_STEP = args.MIN_SEQ_STEP
@@ -377,7 +382,7 @@ class VideoDataset(tutils.data.Dataset):
         # self.input_type = input_type
         self.input_type = input_type+'-images'
         self.train = train
-        self.root = args.DATA_ROOT + args.DATASET + '/'
+        self.root = args.DATA_ROOT + self.DATASET + '/'
         self._imgpath = os.path.join(self.root, self.input_type)
         self.anno_root = self.root
         # if len(args.ANNO_ROOT)>1:
@@ -391,6 +396,7 @@ class VideoDataset(tutils.data.Dataset):
         # self.image_sets = image_sets
         self.transform = transform
         self.ids = list()
+        print(self.DATASET)
         if self.DATASET == 'road':
             self._make_lists_road()  
         elif self.DATASET == 'ucf24':
@@ -729,6 +735,7 @@ class VideoDataset(tutils.data.Dataset):
         self.num_videos = len(self.video_list)
         self.print_str = ptrstr
 
+
     def _make_lists_road(self):
 
         self.anno_file  = os.path.join(self.root, 'road_trainval_v1.0.json')
@@ -740,7 +747,7 @@ class VideoDataset(tutils.data.Dataset):
         
         self.label_types =  final_annots['label_types'] #['agent', 'action', 'loc', 'duplex', 'triplet'] #
         
-        num_label_type = 5
+        num_label_type = len(self.label_types)
         self.num_classes = 1 ## one for presence
         self.num_classes_list = [1]
         for name in self.label_types: 
@@ -758,6 +765,7 @@ class VideoDataset(tutils.data.Dataset):
         self.video_list = []
         self.numf_list = []
         frame_level_list = []
+        
 
         for videoname in sorted(database.keys()):
             if not is_part_of_subsets(final_annots['db'][videoname]['split_ids'], self.SUBSETS):
@@ -919,7 +927,7 @@ class VideoDataset(tutils.data.Dataset):
                     boxes[:, 2] *= width # width x2
                     boxes[:, 1] *= height # height y1
                     boxes[:, 3] *= height # height y2
-
+        # print(videoname,g_w, g_h)
         return clip, all_boxes, labels, ego_labels, index, wh, self.num_classes
 
 
