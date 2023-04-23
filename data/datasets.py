@@ -652,7 +652,7 @@ class VideoDataset(tutils.data.Dataset):
                         anno = frame_annos[key]
                         box = anno['box']
                         
-                        assert box[0]<box[2] and box[1]<box[3], box
+                        assert box[0]<box[2] and box[1]<box[3], str(box)+videoname+str(frame_num)
                         assert width==1920 and height==1280, (width, height, box) # for ROAD ++
                         
                         # temp_img = cv2.rectangle(temp_img, (int(box[0]*1920),int(box[1]*1280)), (int(box[2]*1920),int(box[3]*1280)), (255,0,0), 2)
