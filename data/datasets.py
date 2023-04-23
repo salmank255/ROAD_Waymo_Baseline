@@ -382,7 +382,12 @@ class VideoDataset(tutils.data.Dataset):
         self.anno_root = self.root
         # if len(args.ANNO_ROOT)>1:
         #     self.anno_root = args.ANNO_ROOT 
-
+        self.used_labels = {"agent_labels": ["Ped", "Car", "Cyc", "Mobike", "SmalVeh", "MedVeh", "LarVeh", "Bus", "EmVeh", "TL"],
+                       "action_labels": ["Red", "Amber", "Green", "MovAway", "MovTow", "Mov", "Rev", "Brake", "Stop", "IncatLft", "IncatRht", "HazLit", "TurLft", "TurRht", "MovRht", "MovLft", "Ovtak", "Wait2X", "XingFmLft", "XingFmRht", "Xing", "PushObj"],
+                       "loc_labels": ["VehLane", "OutgoLane", "OutgoCycLane", "OutgoBusLane", "IncomLane", "IncomCycLane", "IncomBusLane", "Pav", "LftPav", "RhtPav", "Jun", "xing", "BusStop", "parking", "LftParking", "rightParking"],
+                       "duplex_labels": ["Ped-MovAway", "Ped-MovTow", "Ped-Mov", "Ped-Stop", "Ped-Wait2X", "Ped-XingFmLft", "Ped-XingFmRht", "Ped-Xing", "Ped-PushObj", "Car-MovAway", "Car-MovTow", "Car-Brake", "Car-Stop", "Car-IncatLft", "Car-IncatRht", "Car-HazLit", "Car-TurLft", "Car-TurRht", "Car-MovRht", "Car-MovLft", "Car-XingFmLft", "Car-XingFmRht", "Cyc-MovAway", "Cyc-MovTow", "Cyc-Stop", "Mobike-Stop", "MedVeh-MovAway", "MedVeh-MovTow", "MedVeh-Brake", "MedVeh-Stop", "MedVeh-IncatLft", "MedVeh-IncatRht", "MedVeh-HazLit", "MedVeh-TurRht", "MedVeh-XingFmLft", "MedVeh-XingFmRht", "LarVeh-MovAway", "LarVeh-MovTow", "LarVeh-Stop", "LarVeh-HazLit", "Bus-MovAway", "Bus-MovTow", "Bus-Brake", "Bus-Stop", "Bus-HazLit", "EmVeh-Stop", "TL-Red", "TL-Amber", "TL-Green"], 
+                       "triplet_labels": ["Ped-MovAway-LftPav", "Ped-MovAway-RhtPav", "Ped-MovAway-Jun", "Ped-MovTow-LftPav", "Ped-MovTow-RhtPav", "Ped-MovTow-Jun", "Ped-Mov-OutgoLane", "Ped-Mov-Pav", "Ped-Mov-RhtPav", "Ped-Stop-OutgoLane", "Ped-Stop-Pav", "Ped-Stop-LftPav", "Ped-Stop-RhtPav", "Ped-Stop-BusStop", "Ped-Wait2X-RhtPav", "Ped-Wait2X-Jun", "Ped-XingFmLft-Jun", "Ped-XingFmRht-Jun", "Ped-XingFmRht-xing", "Ped-Xing-Jun", "Ped-PushObj-LftPav", "Ped-PushObj-RhtPav", "Car-MovAway-VehLane", "Car-MovAway-OutgoLane", "Car-MovAway-Jun", "Car-MovTow-VehLane", "Car-MovTow-IncomLane", "Car-MovTow-Jun", "Car-Brake-VehLane", "Car-Brake-OutgoLane", "Car-Brake-Jun", "Car-Stop-VehLane", "Car-Stop-OutgoLane", "Car-Stop-IncomLane", "Car-Stop-Jun", "Car-Stop-parking", "Car-IncatLft-VehLane", "Car-IncatLft-OutgoLane", "Car-IncatLft-IncomLane", "Car-IncatLft-Jun", "Car-IncatRht-VehLane", "Car-IncatRht-OutgoLane", "Car-IncatRht-IncomLane", "Car-IncatRht-Jun", "Car-HazLit-IncomLane", "Car-TurLft-VehLane", "Car-TurLft-Jun", "Car-TurRht-Jun", "Car-MovRht-OutgoLane", "Car-MovLft-VehLane", "Car-MovLft-OutgoLane", "Car-XingFmLft-Jun", "Car-XingFmRht-Jun", "Cyc-MovAway-OutgoCycLane", "Cyc-MovAway-RhtPav", "Cyc-MovTow-IncomLane", "Cyc-MovTow-RhtPav", "MedVeh-MovAway-VehLane", "MedVeh-MovAway-OutgoLane", "MedVeh-MovAway-Jun", "MedVeh-MovTow-IncomLane", "MedVeh-MovTow-Jun", "MedVeh-Brake-VehLane", "MedVeh-Brake-OutgoLane", "MedVeh-Brake-Jun", "MedVeh-Stop-VehLane", "MedVeh-Stop-OutgoLane", "MedVeh-Stop-IncomLane", "MedVeh-Stop-Jun", "MedVeh-Stop-parking", "MedVeh-IncatLft-IncomLane", "MedVeh-IncatRht-Jun", "MedVeh-TurRht-Jun", "MedVeh-XingFmLft-Jun", "MedVeh-XingFmRht-Jun", "LarVeh-MovAway-VehLane", "LarVeh-MovTow-IncomLane", "LarVeh-Stop-VehLane", "LarVeh-Stop-Jun", "Bus-MovAway-OutgoLane", "Bus-MovTow-IncomLane", "Bus-Stop-VehLane", "Bus-Stop-OutgoLane", "Bus-Stop-IncomLane", "Bus-Stop-Jun", "Bus-HazLit-OutgoLane"]}
+        
         # self.image_sets = image_sets
         self.transform = transform
         self.ids = list()
@@ -600,15 +605,15 @@ class VideoDataset(tutils.data.Dataset):
         self.num_classes_list = [1]
         for name in self.label_types: 
             logger.info('Number of {:s}: all :: {:d} to use: {:d}'.format(name, 
-                len(final_annots['all_'+name+'_labels']),len(final_annots[name+'_labels'])))
-            numc = len(final_annots[name+'_labels'])
+                len(final_annots['all_'+name+'_labels']),len(self.used_labels[name+'_labels'])))
+            numc = len(self.used_labels[name+'_labels'])
             self.num_classes_list.append(numc)
             self.num_classes += numc
         
         self.ego_classes = final_annots['av_action_labels']
         self.num_ego_classes = len(self.ego_classes)
 
-        counts = np.zeros((len(final_annots[self.label_types[-1] + '_labels']), num_label_type), dtype=np.int32)
+        counts = np.zeros((len(self.used_labels[self.label_types[-1] + '_labels']), num_label_type), dtype=np.int32)
         # counts = np.zeros((len(final_annots[self.label_types[0] + '_labels']) + len(final_annots[self.label_types[1] + '_labels']) +len(final_annots[self.label_types[2] + '_labels'])  , num_label_type), dtype=np.int32)
 
 
@@ -710,7 +715,7 @@ class VideoDataset(tutils.data.Dataset):
         self.frame_level_list = frame_level_list
         self.all_classes = [['agent_ness']]
         for k, name in enumerate(self.label_types):
-            labels = final_annots[name+'_labels']
+            labels = self.used_labels[name+'_labels']
             self.all_classes.append(labels)
             # self.num_classes_list.append(len(labels))
             for c, cls_ in enumerate(labels): # just to see the distribution of train and test sets
@@ -740,15 +745,15 @@ class VideoDataset(tutils.data.Dataset):
         self.num_classes_list = [1]
         for name in self.label_types: 
             logger.info('Number of {:s}: all :: {:d} to use: {:d}'.format(name, 
-                len(final_annots['all_'+name+'_labels']),len(final_annots[name+'_labels'])))
-            numc = len(final_annots[name+'_labels'])
+                len(final_annots['all_'+name+'_labels']),len(self.used_labels[name+'_labels'])))
+            numc = len(self.used_labels[name+'_labels'])
             self.num_classes_list.append(numc)
             self.num_classes += numc
         
         self.ego_classes = final_annots['av_action_labels']
         self.num_ego_classes = len(self.ego_classes)
         
-        counts = np.zeros((len(final_annots[self.label_types[-1] + '_labels']), num_label_type), dtype=np.int32)
+        counts = np.zeros((len(self.used_labels[self.label_types[-1] + '_labels']), num_label_type), dtype=np.int32)
 
         self.video_list = []
         self.numf_list = []
@@ -841,7 +846,7 @@ class VideoDataset(tutils.data.Dataset):
         self.frame_level_list = frame_level_list
         self.all_classes = [['agent_ness']]
         for k, name in enumerate(self.label_types):
-            labels = final_annots[name+'_labels']
+            labels = self.used_labels[name+'_labels']
             self.all_classes.append(labels)
             # self.num_classes_list.append(len(labels))
             for c, cls_ in enumerate(labels): # just to see the distribution of train and test sets

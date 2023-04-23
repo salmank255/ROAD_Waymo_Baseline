@@ -107,7 +107,18 @@ class ResizeClip(object):
         clip = [F.resize(image, size) for image in clip]
         return clip
 
+class ResizeClip_Fixed(object):
+    def __init__(self, min_size, max_size):
+        self.min_size = min_size 
+        self.max_size = max_size 
+        self.stride = 32
+    # modified from torchvision to add support for max size
 
+    def __call__(self, clip):
+        size = (self.min_size, self.max_size)
+        clip = [F.resize(image, size) for image in clip]
+        return clip
+    
 class ToTensorStack(object):
     
     """
