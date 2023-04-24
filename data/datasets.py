@@ -678,7 +678,7 @@ class VideoDataset(tutils.data.Dataset):
                         cc = 1
                         for idx, name in enumerate(self.label_types):
                             # print(idx,name)
-                            filtered_ids = filter_labels(anno[name+'_ids'], final_annots['all_'+name+'_labels'], final_annots[name+'_labels'])
+                            filtered_ids = filter_labels(anno[name+'_ids'], final_annots['all_'+name+'_labels'], self.used_labels[name+'_labels'])
                             list_box_labels.append(filtered_ids)
                             for fid in filtered_ids:
                                 box_labels[fid+cc] = 1
@@ -812,7 +812,7 @@ class VideoDataset(tutils.data.Dataset):
                         list_box_labels = []
                         cc = 1
                         for idx, name in enumerate(self.label_types):
-                            filtered_ids = filter_labels(anno[name+'_ids'], final_annots['all_'+name+'_labels'], final_annots[name+'_labels'])
+                            filtered_ids = filter_labels(anno[name+'_ids'], final_annots['all_'+name+'_labels'], self.used_labels[name+'_labels'])
                             list_box_labels.append(filtered_ids)
                             for fid in filtered_ids:
                                 box_labels[fid+cc] = 1

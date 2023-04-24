@@ -77,7 +77,7 @@ def copy_source(source_dir):
 
 
 def set_args(args):
-    args.MAX_SIZE = int(args.MIN_SIZE*1.35)
+    args.MAX_SIZE = int(args.MIN_SIZE*1.40)
     args.MILESTONES = [int(val) for val in args.MILESTONES.split(',')]
     #args.GAMMAS = [float(val) for val in args.GAMMAS.split(',')]
     args.EVAL_EPOCHS = [int(val) for val in args.EVAL_EPOCHS.split(',')]
