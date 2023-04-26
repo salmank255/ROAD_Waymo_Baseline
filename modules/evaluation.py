@@ -256,13 +256,13 @@ def get_gt_tubes(final_annots, subset, label_type, dataset):
     video_list = []
     tubes = {}
     for videoname in final_annots['db']:
-        if dataset == 'road' or dataset == 'roadpp':
+        if dataset == 'road' or dataset == 'roadpp' or dataset== 'combine':
             cond = is_part_of_subsets(final_annots['db'][videoname]['split_ids'], [subset])
         else:
             cond = videoname not in final_annots['trainvideos']
         if cond:
             video_list.append(videoname)
-            if dataset == 'road' or dataset == 'roadpp':
+            if dataset == 'road' or dataset == 'roadpp' or dataset=='combine':
                 tubes[videoname] = get_filtered_tubes(
                     label_type+'_tubes', final_annots, videoname)
             else:
@@ -355,7 +355,7 @@ def evaluate_tubes(anno_file, det_file,  subset='val_3', dataset='road', iou_thr
     logger.info('GT FILE:: '+ anno_file)
     logger.info('Result File:: '+ det_file)
 
-    if dataset == 'road' or dataset == 'roadpp':
+    if dataset == 'road' or dataset == 'roadpp' or dataset=='combine':
         with open(anno_file, 'r') as fff:
             final_annots = json.load(fff)
     else:
@@ -365,7 +365,7 @@ def evaluate_tubes(anno_file, det_file,  subset='val_3', dataset='road', iou_thr
     with open(det_file, 'rb') as fff:
         detections = pickle.load(fff)
 
-    if dataset == 'road' or dataset =='roadpp':
+    if dataset == 'road' or dataset =='roadpp' or dataset=='combine':
         label_types = final_annots['label_types']
     else:
         label_types = ['action']
@@ -373,7 +373,7 @@ def evaluate_tubes(anno_file, det_file,  subset='val_3', dataset='road', iou_thr
     results = {} 
     for _, label_type in enumerate(label_types):
 
-        if dataset != 'road' or dataset != 'roadpp':
+        if dataset != 'road' or dataset != 'roadpp' or dataset!= 'combine' :
             classes = final_annots['classes']
         else:
             classes = final_annots[label_type+'_labels']
@@ -491,7 +491,7 @@ def get_gt_frames_ava(final_annots, label_type, wh):
 def get_gt_frames(final_annots, subsets, label_type, dataset, wh):
     """Get video list form ground truth videos used in subset 
     and their ground truth frames """
-    if dataset == 'road' or dataset=='roadpp':
+    if dataset == 'road' or dataset=='roadpp' or dataset=='combine':
         # video_list = []
         frames = {}
         if not isinstance(subsets, list):
@@ -592,7 +592,7 @@ def eval_framewise_ego_actions_ucf24(final_annots, detections, subsets):
 
 
 def eval_framewise_ego_actions(final_annots, detections, subsets, dataset='road'):
-    if dataset == 'road' or dataset == 'roadpp':
+    if dataset == 'road' or dataset == 'roadpp' or dataset == 'combine':
         return eval_framewise_ego_actions_road(final_annots, detections, subsets)
     else:
         return eval_framewise_ego_actions_ucf24(final_annots, detections, subsets)
@@ -606,7 +606,7 @@ def evaluate_frames(anno_file, det_file, subset, wh, iou_thresh=0.5, dataset='ro
     if dataset == 'road':
         with open(anno_file, 'r') as fff:
             final_annots = json.load(fff)
-    if dataset == 'roadpp':
+    if dataset == 'roadpp' or dataset == 'combine':
         with open(anno_file, 'r') as fff:
             final_annots = json.load(fff)
     elif dataset == 'ucf24':
@@ -623,7 +623,7 @@ def evaluate_frames(anno_file, det_file, subset, wh, iou_thresh=0.5, dataset='ro
     results = {}
     if dataset == 'road':
         label_types = ['av_actions'] + ['agent_ness'] + final_annots['label_types']
-    elif dataset == 'roadpp':
+    elif dataset == 'roadpp' or dataset == 'combine':
         label_types = ['agent_ness'] + final_annots['label_types']
     elif dataset == 'ucf24':
         label_types = ['frame_actions', 'action_ness', 'action']
@@ -655,7 +655,7 @@ def evaluate_frames(anno_file, det_file, subset, wh, iou_thresh=0.5, dataset='ro
                 classes = ['action_ness']
             elif dataset == 'ava':
                 classes = class_names_ava
-            elif dataset != 'road' and dataset != 'roadpp':
+            elif dataset != 'road' and dataset != 'roadpp' and dataset != 'combine':
                 classes = final_annots['classes'] ## valid for ucf24
             else:
                 classes = final_annots[label_type+'_labels']
