@@ -66,7 +66,7 @@ def gen_dets(args, net, val_dataset):
         
         net.eval() # switch net to evaluation mode        
         mAP, _, ap_strs = perform_detection(args, net, val_data_loader, val_dataset, epoch)
-        label_types = [args.label_types[0]] + ['ego_action']
+        label_types = [args.label_types[0]] #+ ['ego_action']
         for nlt in range(len(label_types)):
             for ap_str in ap_strs[nlt]:
                 logger.info(ap_str)
@@ -89,8 +89,8 @@ def perform_detection(args, net,  val_data_loader, val_dataset, iteration):
     ts = time.perf_counter()
     activation = torch.nn.Sigmoid().cuda()
 
-    ego_pds = []
-    ego_gts = []
+    # ego_pds = []
+    # ego_gts = []
 
     det_boxes = []
     gt_boxes_all = []
@@ -103,7 +103,7 @@ def perform_detection(args, net,  val_data_loader, val_dataset, iteration):
     nlt = 0
     processed_videos = []
     with torch.no_grad():
-        for val_itr, (images, gt_boxes, gt_targets, ego_labels, batch_counts, img_indexs, wh) in enumerate(val_data_loader):
+        for val_itr, (images, gt_boxes, gt_targets, batch_counts, img_indexs, wh, _, _) in enumerate(val_data_loader):
 
             torch.cuda.synchronize()
             t1 = time.perf_counter()
@@ -111,11 +111,11 @@ def perform_detection(args, net,  val_data_loader, val_dataset, iteration):
             batch_size = images.size(0)
             
             images = images.cuda(0, non_blocking=True)
-            decoded_boxes, confidence, ego_preds = net(images)
-            ego_preds = activation(ego_preds).cpu().numpy()
-            ego_labels = ego_labels.numpy()
+            decoded_boxes, confidence = net(images)
+            # ego_preds = activation(ego_preds).cpu().numpy()
+            # ego_labels = ego_labels.numpy()
             confidence = activation(confidence)
-            seq_len = ego_preds.shape[1]
+            seq_len = gt_targets.size(1)
             
             if val_itr == 5:
                 os.system("nvidia-smi")
@@ -154,9 +154,9 @@ def perform_detection(args, net,  val_data_loader, val_dataset, iteration):
                         startf += step_size
                         continue
                     
-                    if ego_labels[b,si]>-1:
-                        ego_pds.append(ego_preds[b,si,:])
-                        ego_gts.append(ego_labels[b,si])
+                    # if ego_labels[b,si]>-1:
+                    #     ego_pds.append(ego_preds[b,si,:])
+                    #     ego_gts.append(ego_labels[b,si])
                     
                     gt_boxes_batch = gt_boxes[b, si, :batch_counts[b, si],:].numpy()
                     gt_labels_batch =  gt_targets[b, si, :batch_counts[b, si]].numpy()
@@ -171,8 +171,9 @@ def perform_detection(args, net,  val_data_loader, val_dataset, iteration):
                     # pdb.set_trace()
                     save_name = '{:s}/{:05d}.pkl'.format(save_dir, frame_num+1)
                     frame_num += step_size
-                    save_data = {'ego':ego_preds[b,si,:], 'main':save_data}
-                    
+                    # save_data = {'ego':ego_preds[b,si,:], 'main':save_data}
+                    save_data = {'main':save_data}
+
                     if si<seq_len-args.skip_ending or store_last:
                         with open(save_name,'wb') as ff:
                             pickle.dump(save_data, ff)
@@ -192,9 +193,12 @@ def perform_detection(args, net,  val_data_loader, val_dataset, iteration):
                 logger.info('NMS stuff Time {:0.3f}'.format(te - tf))
 
     mAP, ap_all, ap_strs = evaluate.evaluate(gt_boxes_all, det_boxes, args.all_classes, iou_thresh=args.IOU_THRESH)
-    mAP_ego, ap_all_ego, ap_strs_ego = evaluate.evaluate_ego(np.asarray(ego_gts), np.asarray(ego_pds),  args.ego_classes)
-    return mAP + [mAP_ego], ap_all + [ap_all_ego], ap_strs + [ap_strs_ego]
-
+    # mAP_ego, ap_all_ego, ap_strs_ego = evaluate.evaluate_ego(np.asarray(ego_gts), np.asarray(ego_pds),  args.ego_classes)
+    print('mAP:', mAP)
+    print('ap_all:', ap_all)
+    print('ap_strs:', ap_strs)
+    print('Done performing det')
+    return mAP, ap_all, ap_strs
 
 
 def gather_framelevel_detection(args, val_dataset):
