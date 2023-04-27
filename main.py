@@ -56,6 +56,8 @@ def main():
     #  Name of the dataset only voc or coco are supported
     parser.add_argument('--DATASET', default='road', 
                         type=str,help='dataset being used')
+    parser.add_argument('--Test_DATASET', default='road', 
+                        type=str,help='dataset used for testing')
     parser.add_argument('--TRAIN_SUBSETS', default='train,', 
                         type=str,help='Training SUBSETS seprated by ,')
     parser.add_argument('--VAL_SUBSETS', default='val', 
