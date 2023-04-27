@@ -224,10 +224,10 @@ def gather_framelevel_detection(args, val_dataset):
                 dets = pickle.load(ff)
             frame_name = frame_name.rstrip('.pkl')
             # detections[videoname+frame_name] = {}
-            if args.DATASET == 'road':
-                detections['av_actions'][videoname+frame_name] = dets['ego']
-            else:
-                detections['frame_actions'][videoname+frame_name] = dets['ego']
+            # if args.DATASET == 'road':
+            #     detections['av_actions'][videoname+frame_name] = dets['ego']
+            # else:
+            #     detections['frame_actions'][videoname+frame_name] = dets['ego']
             frame_dets = dets['main']
             
             if args.JOINT_4M_MARGINALS:
@@ -296,7 +296,7 @@ def eval_framewise_dets(args, val_dataset):
             logger.info('Detection will be loaded: ' + args.det_file_name)
         
         if args.DATASET == 'road':
-            label_types =  args.label_types + ['av_actions']
+            label_types =  args.label_types #+ ['av_actions']
         elif args.DATASET == 'ucf24':
             label_types = args.label_types + ['frame_actions']
         else:
