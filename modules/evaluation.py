@@ -621,10 +621,8 @@ def evaluate_frames(anno_file, det_file, subset, wh, iou_thresh=0.5, dataset='ro
         detections = pickle.load(fff)
 
     results = {}
-    if dataset == 'road':
-        label_types = ['av_actions'] + ['agent_ness'] + final_annots['label_types']
-    elif dataset == 'roadpp':
-        label_types = ['agent_ness'] + final_annots['label_types']
+    if dataset == 'road' or dataset == 'roadpp':
+        label_types = ['agent_ness', 'agent', 'action', 'loc']
     elif dataset == 'ucf24':
         label_types = ['frame_actions', 'action_ness', 'action']
     elif dataset == 'ava':
