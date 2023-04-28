@@ -359,12 +359,22 @@ class VideoDataset(tutils.data.Dataset):
     ROAD Detection dataset class for pytorch dataloader
     """
 
-    def __init__(self, args, dataset, subsets, train=True, input_type='rgb', transform=None, 
+    def __init__(self, args, dataset, train=True, input_type='rgb', transform=None, 
                 skip_step=1, full_test=False):
 
         self.ANCHOR_TYPE =  args.ANCHOR_TYPE 
         self.DATASET = dataset
-        self.SUBSETS = subsets        
+        # self.SUBSETS = subsets        
+        if train == True:
+            if self.DATASET == 'road':
+                self.SUBSETS = ['train_3']
+            elif self.DATASET == 'road_waymo':
+                self.SUBSETS = ['train']
+        else:
+            if self.DATASET == 'road':
+                self.SUBSETS = ['val_3']
+            elif self.DATASET == 'road_waymo':
+                self.SUBSETS = ['val']
 
         self.SEQ_LEN = args.SEQ_LEN
         self.BATCH_SIZE = args.BATCH_SIZE
@@ -589,9 +599,9 @@ class VideoDataset(tutils.data.Dataset):
     def _make_lists_road_waymo(self):
         
         if self.MODE =='train':
-            self.anno_file  = os.path.join(self.root, 'road_plus_plus_trainval_v1.0.json')
+            self.anno_file  = os.path.join(self.root, 'road_waymo_trainval_v1.0.json')
         else:
-            self.anno_file  = os.path.join(self.root, 'road_plus_plus_test_v1.0.json')
+            self.anno_file  = os.path.join(self.root, 'road_waymo_test_v1.0.json')
         with open(self.anno_file,'r') as fff:
             final_annots = json.load(fff)
         

@@ -58,7 +58,7 @@ def main():
                         type=str2bool,help='Domain Adaptation')
     parser.add_argument('--DATASET', default='road', 
                         type=str,help='dataset being used')
-    parser.add_argument('--Test_DATASET', default='road', 
+    parser.add_argument('--TEST_DATASET', default='road', 
                         type=str,help='dataset used for testing')
     parser.add_argument('--TRAIN_SUBSETS', default='train,', 
                         type=str,help='Training SUBSETS seprated by ,')
@@ -227,18 +227,13 @@ def main():
             logger.info('Domain Adaptation: {} --> {}'.format(args.DATASET, args.Test_DATASET))
 
         if args.DATASET == 'roadpp':
-            road_dataset = VideoDataset(args,'road', ['train_3'], train=True, skip_step=train_skip_step, transform=train_transform)
-            road_waymo_dataset = VideoDataset(args,'road_waymo', ['train'], train=True, skip_step=train_skip_step, transform=train_transform)
+            road_dataset = VideoDataset(args,'road', train=True, skip_step=train_skip_step, transform=train_transform)
+            road_waymo_dataset = VideoDataset(args,'road_waymo', train=True, skip_step=train_skip_step, transform=train_transform)
             train_dataset = torch.utils.data.ConcatDataset([road_dataset,road_waymo_dataset])
             logger.info('Done Loading ROAD Plus Plus (combined) Train Dataset')
 
-        else:
-        
-            if args.DATASET == 'road':
-                subsets = ['train_3']
-            elif args.DATASET == 'road_waymo':
-                subsets = ['train']
-            train_dataset = VideoDataset(args,args.DATASET, subsets, train=True, skip_step=train_skip_step, transform=train_transform)
+        else:        
+            train_dataset = VideoDataset(args,args.DATASET, train=True, skip_step=train_skip_step, transform=train_transform)
             logger.info('Done Loading {} Train Dataset'.format(args.DATASET))
 
 
@@ -266,35 +261,39 @@ def main():
                         vtf.ToTensorStack(),
                         vtf.Normalize(mean=args.MEANS,std=args.STDS)])
 
-    if args.Test_DATASET == 'roadpp':
-        
-        road_val_dataset = VideoDataset(args,'road', ['val_3'], train=False, transform=val_transform, skip_step=skip_step, full_test=full_test)
-        road_waymo_val_dataset = VideoDataset(args,'road_waymo', ['val'], train=False, transform=val_transform, skip_step=skip_step, full_test=full_test)
+    if args.TEST_DATASET == 'roadpp':
+        road_val_dataset = VideoDataset(args,'road', train=False, transform=val_transform, skip_step=skip_step, full_test=full_test)
+        road_waymo_val_dataset = VideoDataset(args,'road_waymo', train=False, transform=val_transform, skip_step=skip_step, full_test=full_test)
         val_dataset = torch.utils.data.ConcatDataset([road_val_dataset,road_waymo_val_dataset])
         logger.info('Done Loading ROAD Plus Plus (combined) Validation Dataset')
-    
-    else:
+       
+        args.num_classes =  road_waymo_val_dataset.num_classes
+        args.label_types = road_waymo_val_dataset.label_types
+        args.num_label_types = road_waymo_val_dataset.num_label_types
+        args.all_classes =  road_waymo_val_dataset.all_classes
+        args.num_classes_list = road_waymo_val_dataset.num_classes_list
+        args.num_ego_classes = road_waymo_val_dataset.num_ego_classes
+        args.ego_classes = road_waymo_val_dataset.ego_classes
 
-        if args.Test_DATASET == 'road':
-            subsets = ['val_3']
-        elif args.Test_DATASET == 'road_waymo':
-            subsets = ['val']
-        val_dataset = VideoDataset(args,args.Test_DATASET, subsets, train=False, transform=val_transform, skip_step=skip_step, full_test=full_test)
-        logger.info('Done Loading {} Validation Dataset, {}'.format(args.Test_DATASET, len(val_dataset)))
+    else:
+        val_dataset = VideoDataset(args,args.TEST_DATASET, train=False, transform=val_transform, skip_step=skip_step, full_test=full_test)
+        logger.info('Done Loading {} Validation Dataset'.format(args.DATASET))
+        
+        args.num_classes =  val_dataset.num_classes
+        args.label_types = val_dataset.label_types
+        args.num_label_types = val_dataset.num_label_types
+        args.all_classes =  val_dataset.all_classes
+        args.num_classes_list = val_dataset.num_classes_list
+        args.num_ego_classes = val_dataset.num_ego_classes
+        args.ego_classes = val_dataset.ego_classes
+
+
 
     # resize one instance of val dataset to get wh
     args.wh = val_dataset[0][5]
     logger.info('wh (hight, width): {}'.format(args.wh))
 
-
-    args.num_classes =  val_dataset.num_classes
-    # one for objectness
-    args.label_types = val_dataset.label_types
-    args.num_label_types = val_dataset.num_label_types
-    args.all_classes =  val_dataset.all_classes
-    args.num_classes_list = val_dataset.num_classes_list
-    args.num_ego_classes = val_dataset.num_ego_classes
-    args.ego_classes = val_dataset.ego_classes
+    
     args.head_size = 256
     if args.MODE in ['train', 'val','gen_dets']:
         net = build_retinanet(args).cuda()
