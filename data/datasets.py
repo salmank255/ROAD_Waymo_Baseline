@@ -623,6 +623,9 @@ class VideoDataset(tutils.data.Dataset):
         self.numf_list = []
         frame_level_list = []
 
+        # vidnames = sorted(database.keys())
+        # vidnames = vidnames[:10]
+        # for videoname in vidnames:
         for videoname in sorted(database.keys()):
             # print(is_part_of_subsets(final_annots['db'][videoname]['split_ids'], self.SUBSETS))
             if not is_part_of_subsets(final_annots['db'][videoname]['split_ids'], self.SUBSETS):
@@ -762,7 +765,9 @@ class VideoDataset(tutils.data.Dataset):
         self.numf_list = []
         frame_level_list = []
         
-
+        # vidnames = sorted(database.keys())
+        # vidnames = vidnames[:10]
+        # for videoname in vidnames:
         for videoname in sorted(database.keys()):
             if not is_part_of_subsets(final_annots['db'][videoname]['split_ids'], self.SUBSETS):
                 continue

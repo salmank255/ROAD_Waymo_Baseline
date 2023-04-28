@@ -54,6 +54,8 @@ def main():
                     type=int, help='Temporal kernel size of regression head')
     
     #  Name of the dataset only voc or coco are supported
+    parser.add_argument('--Domain_Adaptation', default=False, 
+                        type=str2bool,help='Domain Adaptation')
     parser.add_argument('--DATASET', default='road', 
                         type=str,help='dataset being used')
     parser.add_argument('--Test_DATASET', default='road', 
@@ -219,6 +221,11 @@ def main():
         else:
             train_skip_step = args.SEQ_LEN 
 
+        if args.Domain_Adaptation:
+            args.DATASET = 'roadpp'
+            args.Test_DATASET = 'road_waymo'
+            logger.info('Domain Adaptation: {} --> {}'.format(args.DATASET, args.Test_DATASET))
+
         if args.DATASET == 'roadpp':
             road_dataset = VideoDataset(args,'road', ['train_3'], train=True, skip_step=train_skip_step, transform=train_transform)
             road_waymo_dataset = VideoDataset(args,'road_waymo', ['train'], train=True, skip_step=train_skip_step, transform=train_transform)
@@ -262,18 +269,18 @@ def main():
     if args.Test_DATASET == 'roadpp':
         
         road_val_dataset = VideoDataset(args,'road', ['val_3'], train=False, transform=val_transform, skip_step=skip_step, full_test=full_test)
-        road_waymo_val_dataset = VideoDataset(args,'roadpp', ['val'], train=False, transform=val_transform, skip_step=skip_step, full_test=full_test)
+        road_waymo_val_dataset = VideoDataset(args,'road_waymo', ['val'], train=False, transform=val_transform, skip_step=skip_step, full_test=full_test)
         val_dataset = torch.utils.data.ConcatDataset([road_val_dataset,road_waymo_val_dataset])
         logger.info('Done Loading ROAD Plus Plus (combined) Validation Dataset')
     
     else:
 
-        if args.DATASET == 'road':
+        if args.Test_DATASET == 'road':
             subsets = ['val_3']
-        elif args.DATASET == 'road_waymo':
+        elif args.Test_DATASET == 'road_waymo':
             subsets = ['val']
         val_dataset = VideoDataset(args,args.Test_DATASET, subsets, train=False, transform=val_transform, skip_step=skip_step, full_test=full_test)
-        logger.info('Done Loading {} Validation Dataset'.format(args.DATASET))
+        logger.info('Done Loading {} Validation Dataset, {}'.format(args.Test_DATASET, len(val_dataset)))
 
     # resize one instance of val dataset to get wh
     args.wh = val_dataset[0][5]
@@ -304,7 +311,10 @@ def main():
                 net.module.backbone.apply(utils.set_bn_eval)
             else:
                 net.backbone.apply(utils.set_bn_eval)
-        train(args, net, train_dataset, val_dataset)
+        if args.Domain_Adaptation:
+            train(args, net, val_dataset, road_dataset, road_waymo_dataset)
+        else:
+            train(args, net, val_dataset, train_dataset)
     elif args.MODE == 'val':
         val(args, net, val_dataset)
     elif args.MODE == 'gen_dets':
