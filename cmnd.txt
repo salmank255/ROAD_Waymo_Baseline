@@ -34,3 +34,18 @@ visulisation
 python gt_vis.py ../ ../ kinetics-pt/ --MODE=gen_dets --ARCH=resnet50 --MODEL_TYPE=SlowFast --DATASET=roadpp --TEST_SEQ_LEN=8 --TRAIN_SUBSETS=train --TEST_SUBSETS=test --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=1 --LR=0.0011
 
 
+
+
+
+train on road -- eris machine
+
+CUDA_VISIBLE_DEVICES=0,1,2 python main.py ../ ../ kinetics-pt/ --MODE=train --ARCH=resnet50 --MODEL_TYPE=I3D --DATASET=road --TRAIN_SUBSETS=train_3 --VAL_SUBSETS=val_3 --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=15 --LR=0.0041 --MIN_SIZE=600
+CUDA_VISIBLE_DEVICES=0,1,2 python main.py ../ ../ kinetics-pt/ --MODE=train --ARCH=resnet50 --MODEL_TYPE=SlowFast --DATASET=road --TRAIN_SUBSETS=train_3 --VAL_SUBSETS=val_3 --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=12 --LR=0.0041 --MIN_SIZE=600
+
+python main.py ../ ../ kinetics-pt/ --MODE=gen_dets --ARCH=resnet50 --MODEL_TYPE=I3D --DATASET=road --TEST_SEQ_LEN=8 --TRAIN_SUBSETS=train --TEST_SUBSETS=test --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=8 --LR=0.0011 --MIN_SIZE=600
+
+
+
+
+
+

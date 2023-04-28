@@ -206,9 +206,9 @@ def main():
         
         
         train_transform = transforms.Compose([
-                            vtf.ResizeClip(args.MIN_SIZE, args.MAX_SIZE),
-                            vtf.ToTensorStack(),
-                            vtf.Normalize(mean=args.MEANS, std=args.STDS)])
+                vtf.ResizeClip_Fixed(args.MIN_SIZE, args.MAX_SIZE),
+                vtf.ToTensorStack(),
+                vtf.Normalize(mean=args.MEANS, std=args.STDS)])
         
         # train_skip_step = args.SEQ_LEN
         # if args.SEQ_LEN>4 and args.SEQ_LEN<=10:
@@ -219,6 +219,9 @@ def main():
         else:
             train_skip_step = args.SEQ_LEN 
 
+        if args.DATASET == 'combine':
+            road_dataset = VideoDataset(args,'road', train=True, skip_step=train_skip_step, transform=train_transform)
+            road_waymo_dataset = VideoDataset(args,'roadpp', train=True, skip_step=train_skip_step, transform=train_transform)
         if args.DATASET == 'roadpp':
             train_transform = transforms.Compose([
                     vtf.ResizeClip_Fixed(args.MIN_SIZE, args.MAX_SIZE),
@@ -233,6 +236,8 @@ def main():
             # print(len(train_dataset))
             
         else:
+            train_dataset = VideoDataset(args,args.DATASET, train=True, skip_step=train_skip_step, transform=train_transform)
+
             train_transform = transforms.Compose([
                     vtf.ResizeClip(args.MIN_SIZE, args.MAX_SIZE),
                     vtf.ToTensorStack(),
@@ -264,6 +269,16 @@ def main():
 
         skip_step = args.SEQ_LEN - args.skip_beggning
 
+    val_transform = transforms.Compose([ 
+                        vtf.ResizeClip_Fixed(args.MIN_SIZE, args.MAX_SIZE),
+                        vtf.ToTensorStack(),
+                        vtf.Normalize(mean=args.MEANS,std=args.STDS)])
+
+    if args.Test_DATASET == 'combine':
+        
+        road_val_dataset = VideoDataset(args,'roadpp', train=False, transform=val_transform, skip_step=skip_step, full_test=full_test)
+        road_waymo_val_dataset = VideoDataset(args,'roadpp', train=False, transform=val_transform, skip_step=skip_step, full_test=full_test)
+        val_dataset = torch.utils.data.ConcatDataset([road_val_dataset,road_waymo_dataset])
     if args.Test_DATASET == 'raodpp':
 
         val_transform = transforms.Compose([ 
@@ -277,6 +292,9 @@ def main():
         logger.info('Done Loading ROAD Plus Plus Validation Dataset')
 
     else:
+        val_dataset = VideoDataset(args,args.Test_DATASET, train=False, transform=val_transform, skip_step=skip_step, full_test=full_test)
+
+    logger.info('Done Loading Dataset Validation Dataset')
         val_transform = transforms.Compose([ 
                             vtf.ResizeClip(args.MIN_SIZE, args.MAX_SIZE),
                             vtf.ToTensorStack(),
