@@ -219,14 +219,15 @@ def main():
         else:
             train_skip_step = args.SEQ_LEN 
 
-        if args.DATASET == 'combine':
+        if args.DATASET == 'roadpp':
             train_transform = transforms.Compose([
                     vtf.ResizeClip_Fixed(args.MIN_SIZE, args.MAX_SIZE),
                     vtf.ToTensorStack(),
                     vtf.Normalize(mean=args.MEANS, std=args.STDS)])
-            road_dataset = VideoDataset(args,'road', train=True, skip_step=train_skip_step, transform=train_transform)
-            road_waymo_dataset = VideoDataset(args,'roadpp', train=True, skip_step=train_skip_step, transform=train_transform)
+            road_dataset = VideoDataset(args,'road', ['train_3'],train=True, skip_step=train_skip_step, transform=train_transform)
+            road_waymo_dataset = VideoDataset(args,'road_waymo', ['train'], train=True, skip_step=train_skip_step, transform=train_transform)
             train_dataset = torch.utils.data.ConcatDataset([road_dataset,road_waymo_dataset])
+            logger.info('Done Loading ROAD Plus Plus Train Dataset')
             # print(len(road_dataset))
             # print(len(road_waymo_dataset))
             # print(len(train_dataset))
@@ -236,12 +237,14 @@ def main():
                     vtf.ResizeClip(args.MIN_SIZE, args.MAX_SIZE),
                     vtf.ToTensorStack(),
                     vtf.Normalize(mean=args.MEANS, std=args.STDS)])
+            if args.DATASET == 'road':
+                subsets = ['train_3']
+            elif args.DATASET == 'road_waymo':
+                subsets = ['train']
+            train_dataset = VideoDataset(args,args.DATASET, subsets, train=True, skip_step=train_skip_step, transform=train_transform)
+            logger.info('Done Loading {} Train Dataset'.format(args.DATASET))
 
-            train_dataset = VideoDataset(args,args.DATASET, train=True, skip_step=train_skip_step, transform=train_transform)
 
-
-
-        logger.info('Done Loading Dataset Train Dataset')
         ## For validation set
         full_test = False
         args.SUBSETS = args.VAL_SUBSETS
@@ -261,23 +264,30 @@ def main():
 
         skip_step = args.SEQ_LEN - args.skip_beggning
 
-    if args.DATASET == 'combine':
+    if args.Test_DATASET == 'raodpp':
 
         val_transform = transforms.Compose([ 
                             vtf.ResizeClip_Fixed(args.MIN_SIZE, args.MAX_SIZE),
                             vtf.ToTensorStack(),
                             vtf.Normalize(mean=args.MEANS,std=args.STDS)])
         
-        val_dataset = VideoDataset(args,'roadpp', train=False, transform=val_transform, skip_step=skip_step, full_test=full_test)
+        road_dataset = VideoDataset(args,'road', ['val_3'], train=False, transform=val_transform, skip_step=skip_step, full_test=full_test)
+        road_waymo_dataset = VideoDataset(args,'roadpp', ['val'], train=False, transform=val_transform, skip_step=skip_step, full_test=full_test)
+        val_dataset = torch.utils.data.ConcatDataset([road_dataset,road_waymo_dataset])
+        logger.info('Done Loading ROAD Plus Plus Validation Dataset')
+
     else:
         val_transform = transforms.Compose([ 
                             vtf.ResizeClip(args.MIN_SIZE, args.MAX_SIZE),
                             vtf.ToTensorStack(),
                             vtf.Normalize(mean=args.MEANS,std=args.STDS)])
 
-        val_dataset = VideoDataset(args,args.DATASET, train=False, transform=val_transform, skip_step=skip_step, full_test=full_test)
-
-    logger.info('Done Loading Dataset Validation Dataset')
+        if args.DATASET == 'road':
+            subsets = ['train_3']
+        elif args.DATASET == 'road_waymo':
+            subsets = ['train']
+        val_dataset = VideoDataset(args,args.DATASET, subsets, train=False, transform=val_transform, skip_step=skip_step, full_test=full_test)
+        logger.info('Done Loading {} Validation Dataset'.format(args.DATASET))
 
     # resize one instance of val dataset to get wh
     args.wh = val_dataset[0][5]

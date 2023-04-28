@@ -359,16 +359,12 @@ class VideoDataset(tutils.data.Dataset):
     ROAD Detection dataset class for pytorch dataloader
     """
 
-    def __init__(self, args,dataset, train=True, input_type='rgb', transform=None, 
+    def __init__(self, args, dataset, subsets, train=True, input_type='rgb', transform=None, 
                 skip_step=1, full_test=False):
 
         self.ANCHOR_TYPE =  args.ANCHOR_TYPE 
         self.DATASET = dataset
-        
-        if self.DATASET == 'road' and args.SUBSETS == ['train']:
-            self.SUBSETS = ['train_3']
-        else:
-            self.SUBSETS = args.SUBSETS        
+        self.SUBSETS = subsets        
 
         self.SEQ_LEN = args.SEQ_LEN
         self.BATCH_SIZE = args.BATCH_SIZE
@@ -403,8 +399,8 @@ class VideoDataset(tutils.data.Dataset):
             self._make_lists_ucf24() 
         elif self.DATASET == 'ava':
             self._make_lists_ava() 
-        elif self.DATASET == 'roadpp':
-            self._make_lists_roadpp() 
+        elif self.DATASET == 'road_waymo':
+            self._make_lists_road_waymo() 
 
         else:
             raise Exception('Specfiy corect dataset')
@@ -590,7 +586,7 @@ class VideoDataset(tutils.data.Dataset):
         self.print_str = ptrstr
         
 
-    def _make_lists_roadpp(self):
+    def _make_lists_road_waymo(self):
         
         if self.MODE =='train':
             self.anno_file  = os.path.join(self.root, 'road_plus_plus_trainval_v1.0.json')
@@ -884,7 +880,7 @@ class VideoDataset(tutils.data.Dataset):
         all_boxes = []
         labels = []
         ego_labels = []
-        mask = np.zeros(self.SEQ_LEN, dtype=np.int)
+        mask = np.zeros(self.SEQ_LEN, dtype=int)
         indexs = []
         for i in range(self.SEQ_LEN):
             indexs.append(frame_num)
