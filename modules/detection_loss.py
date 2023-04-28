@@ -166,7 +166,8 @@ class FocalLoss(nn.Module):
         
         # for domain classification adaptation
         # domain_labels = F.one_hot(domain_labels, num_classes=2).float()
-        if domain_preds and domain_labels:
+        if domain_preds is not None and domain_labels is not None:
+            domain_preds = domain_preds.squeeze()
             domain_loss = self.domain_loss_fn(domain_preds, domain_labels)
             return regression_loss, cls_loss/8.0 , domain_loss
         

@@ -43,7 +43,8 @@ CUDA_VISIBLE_DEVICES=0,1,2 python main.py ../ ../ kinetics-pt/ --MODE=train --AR
 CUDA_VISIBLE_DEVICES=0,1,2 python main.py ../ ../ kinetics-pt/ --MODE=train --ARCH=resnet50 --MODEL_TYPE=SlowFast --DATASET=road --TRAIN_SUBSETS=train_3 --VAL_SUBSETS=val_3 --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=12 --LR=0.0041 --MIN_SIZE=600
 
 
-CUDA_VISIBLE_DEVICES=0,1,2 python main.py ../road-dataset/ ../DA_exp/ kinetics-pt --ARCH=resnet50 --MODEL_TYPE=I3D --DATASET=road --TRAIN_SUBSETS=train_3 --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=15 --LR=0.0041 --VAL_STEP 1 --MIN_SIZE=600 --Domain_Adaptation True
+CUDA_VISIBLE_DEVICES=0,1 python main.py ../road-dataset/ ../DA_exp/ kinetics-pt --ARCH=resnet50 --MODEL_TYPE=I3D --DATASET=road --TRAIN_SUBSETS=train_3 --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=16 --LR=0.0041 --VAL_STEP 1 --MIN_SIZE=600 --Domain_Adaptation True
+CUDA_VISIBLE_DEVICES=0,1,2 python main.py ../road-dataset/ ../DA_exp/ kinetics-pt --ARCH=resnet50 --MODEL_TYPE=I3D --DATASET=road --TRAIN_SUBSETS=train_3 --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=15 --LR=0.0041 --VAL_STEP 1 --MIN_SIZE=600
 
 
 

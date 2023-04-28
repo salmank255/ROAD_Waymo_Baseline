@@ -109,8 +109,9 @@ class RetinaNet(nn.Module):
 
             if torch.all(domain_labels == 0) :  
                 domain_loss_fn = nn.BCEWithLogitsLoss()
+                domain_preds = domain_preds.squeeze()
                 domain_loss = domain_loss_fn(domain_preds, domain_labels)
-                return 0, 0, domain_loss
+                return domain_loss
         else:
             domain_preds = None
 

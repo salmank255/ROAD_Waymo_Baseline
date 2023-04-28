@@ -65,7 +65,7 @@ def train(args, net, val_dataset, train_dataset, train2_dataset=None):
                                   shuffle=True, pin_memory=True, collate_fn=custum_collate, drop_last=True)
         train2_data_loader = data_utils.DataLoader(train2_dataset, args.BATCH_SIZE//2, num_workers=args.NUM_WORKERS,
                                   shuffle=True, pin_memory=True, collate_fn=custum_collate, drop_last=True)
-        train_data_loader = zip(train1_data_loader, train2_data_loader)
+       
     else:
         train_data_loader = data_utils.DataLoader(train_dataset, args.BATCH_SIZE, num_workers=args.NUM_WORKERS,
                                   shuffle=True, pin_memory=True, collate_fn=custum_collate, drop_last=True)
@@ -85,7 +85,8 @@ def train(args, net, val_dataset, train_dataset, train2_dataset=None):
                 net.backbone.apply(utils.set_bn_eval)
         
         if train2_dataset is not None:
-             iteration = run_train_both(args, train_data_loader, net, optimizer, epoch, iteration) 
+            train_data_loader = zip(train1_data_loader, train2_data_loader)
+            iteration = run_train_both(args, train_data_loader, net, optimizer, epoch, iteration) 
         else:
             iteration = run_train(args, train_data_loader, net, optimizer, epoch, iteration)
         
@@ -107,17 +108,17 @@ def run_train_both(args, train_data_loader, net, optimizer, epoch, iteration):
     domain_losses = AverageMeter()
     torch.cuda.synchronize()
     start = time.perf_counter()
-
-    for internel_iter, ((images_s, gt_boxes, gt_labels, ego_labels, counts, img_indexs, wh_s),\
-                        (images_t, _, _, _, _, _, wh_t)) in enumerate(train_data_loader):
+    
+    for internel_iter, ((images_s, gt_boxes, gt_labels, ego_labels, counts, img_indexs, wh_s), (images_t, _, _, _, _, _, wh_t)) in enumerate(train_data_loader):
         iteration += 1
         
-        images = torch.cat((images_s, images_t), dim=0) # batch_size, C, N, H, W
-        images = images.cuda(0, non_blocking=True)
-        
-        domain_y = torch.cat((torch.ones(images_s.shape[0]), # , images_s.shape[2]
-                              torch.zeros(images_t.shape[0])), dim=0) # seq_len
-        domain_y = domain_y.cuda(0, non_blocking=True)
+        images_s = images_s.cuda(0, non_blocking=True)
+        domain_y_s = torch.ones(images_s.shape[0])
+        domain_y_s = domain_y_s.cuda(0, non_blocking=True)
+
+        images_t = images_t.cuda(0, non_blocking=True)
+        domain_y_t = torch.zeros(images_t.shape[0])
+        domain_y_t = domain_y_t.cuda(0, non_blocking=True)
 
         gt_boxes = gt_boxes.cuda(0, non_blocking=True)
         gt_labels = gt_labels.cuda(0, non_blocking=True)
@@ -132,7 +133,9 @@ def run_train_both(args, train_data_loader, net, optimizer, epoch, iteration):
         optimizer.zero_grad()
         # pdb.set_trace()
         
-        loss_l, loss_c, loss_d = net(images, gt_boxes, gt_labels, ego_labels, counts, img_indexs, domain_y)
+        loss_l, loss_c, loss_d_s = net(images_s, gt_boxes, gt_labels, ego_labels, counts, img_indexs, domain_y_s)
+        loss_d_t = net(images_t, None, None, None, None, None, domain_y_t)
+        loss_d = loss_d_s + loss_d_t
         loss_l, loss_c, loss_d = loss_l.mean(), loss_c.mean(), loss_d.mean()
         loss = loss_l + loss_c + loss_d
 
@@ -150,6 +153,10 @@ def run_train_both(args, train_data_loader, net, optimizer, epoch, iteration):
             lline = '\n\n\n We got faulty CLASSIFICATION loss {} {} \n\n\n'.format(loc_loss, conf_loss)
             logger.info(lline)
             conf_loss = 20.0
+        if math.isnan(domain_loss) or  domain_loss>300:
+            lline = '\n\n\n We got faulty DOMAIN loss {} {} {} \n\n\n'.format(loc_loss, conf_loss, domain_loss)
+            logger.info(lline)
+            domain_loss = 20.0
         
         loc_losses.update(loc_loss)
         cls_losses.update(conf_loss)
@@ -171,7 +178,7 @@ def run_train_both(args, train_data_loader, net, optimizer, epoch, iteration):
 
             print_line = 'Itration [{:d}/{:d}]{:06d}/{:06d} loc-loss {:.2f}({:.2f}) cls-loss {:.2f}({:.2f}) ' \
                         'dom-loss {:.2f}({:.2f}) average-loss {:.2f}({:.2f}) DataTime {:0.2f}({:0.2f}) Timer {:0.2f}({:0.2f})'.format( epoch, 
-                        args.MAX_EPOCHS, iteration, args.MAX_ITERS, loc_losses.val, loc_losses.avg, cls_losses.val,
+                        args.MAX_EPOCHS, iteration, args.MAX_ITERS*2, loc_losses.val, loc_losses.avg, cls_losses.val,
                         cls_losses.avg, domain_losses.val, domain_losses.avg, losses.val, losses.avg, 10*data_time.val, 10*data_time.avg, 10*batch_time.val, 10*batch_time.avg)
 
             logger.info(print_line)
