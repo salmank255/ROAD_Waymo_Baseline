@@ -220,18 +220,13 @@ def main():
             train_skip_step = args.SEQ_LEN 
 
         if args.DATASET == 'roadpp':
-            road_dataset = VideoDataset(args,'road', ['train_3'], train=True, skip_step=train_skip_step, transform=train_transform)
-            road_waymo_dataset = VideoDataset(args,'road_waymo', ['train'], train=True, skip_step=train_skip_step, transform=train_transform)
+            road_dataset = VideoDataset(args,'road', train=True, skip_step=train_skip_step, transform=train_transform)
+            road_waymo_dataset = VideoDataset(args,'road_waymo', train=True, skip_step=train_skip_step, transform=train_transform)
             train_dataset = torch.utils.data.ConcatDataset([road_dataset,road_waymo_dataset])
             logger.info('Done Loading ROAD Plus Plus (combined) Train Dataset')
 
-        else:
-        
-            if args.DATASET == 'road':
-                subsets = ['train_3']
-            elif args.DATASET == 'road_waymo':
-                subsets = ['train']
-            train_dataset = VideoDataset(args,args.DATASET, subsets, train=True, skip_step=train_skip_step, transform=train_transform)
+        else:        
+            train_dataset = VideoDataset(args,args.DATASET, train=True, skip_step=train_skip_step, transform=train_transform)
             logger.info('Done Loading {} Train Dataset'.format(args.DATASET))
 
 
@@ -261,18 +256,13 @@ def main():
 
     if args.Test_DATASET == 'roadpp':
         
-        road_val_dataset = VideoDataset(args,'road', ['val_3'], train=False, transform=val_transform, skip_step=skip_step, full_test=full_test)
-        road_waymo_val_dataset = VideoDataset(args,'roadpp', ['val'], train=False, transform=val_transform, skip_step=skip_step, full_test=full_test)
+        road_val_dataset = VideoDataset(args,'road', train=False, transform=val_transform, skip_step=skip_step, full_test=full_test)
+        road_waymo_val_dataset = VideoDataset(args,'roadpp', train=False, transform=val_transform, skip_step=skip_step, full_test=full_test)
         val_dataset = torch.utils.data.ConcatDataset([road_val_dataset,road_waymo_val_dataset])
         logger.info('Done Loading ROAD Plus Plus (combined) Validation Dataset')
     
     else:
-
-        if args.DATASET == 'road':
-            subsets = ['val_3']
-        elif args.DATASET == 'road_waymo':
-            subsets = ['val']
-        val_dataset = VideoDataset(args,args.Test_DATASET, subsets, train=False, transform=val_transform, skip_step=skip_step, full_test=full_test)
+        val_dataset = VideoDataset(args,args.Test_DATASET, train=False, transform=val_transform, skip_step=skip_step, full_test=full_test)
         logger.info('Done Loading {} Validation Dataset'.format(args.DATASET))
 
     # resize one instance of val dataset to get wh
