@@ -59,13 +59,17 @@ def train(args, net, val_dataset, train_dataset, train2_dataset=None):
     logger.info('Training FPN with {} + {} as backbone '.format(args.ARCH, args.MODEL_TYPE))
 
 
-    train_data_loader = data_utils.DataLoader(train_dataset, args.BATCH_SIZE, num_workers=args.NUM_WORKERS,
-                                  shuffle=True, pin_memory=True, collate_fn=custum_collate, drop_last=True)
+    
     if train2_dataset is not None:
-        train2_data_loader = data_utils.DataLoader(train2_dataset, args.BATCH_SIZE, num_workers=args.NUM_WORKERS,
+        train1_data_loader = data_utils.DataLoader(train_dataset, args.BATCH_SIZE//2, num_workers=args.NUM_WORKERS,
                                   shuffle=True, pin_memory=True, collate_fn=custum_collate, drop_last=True)
-        train_data_loader = zip(train_data_loader, train2_data_loader)
-
+        train2_data_loader = data_utils.DataLoader(train2_dataset, args.BATCH_SIZE//2, num_workers=args.NUM_WORKERS,
+                                  shuffle=True, pin_memory=True, collate_fn=custum_collate, drop_last=True)
+        train_data_loader = zip(train1_data_loader, train2_data_loader)
+    else:
+        train_data_loader = data_utils.DataLoader(train_dataset, args.BATCH_SIZE, num_workers=args.NUM_WORKERS,
+                                  shuffle=True, pin_memory=True, collate_fn=custum_collate, drop_last=True)
+    
     val_data_loader = data_utils.DataLoader(val_dataset, args.BATCH_SIZE, num_workers=args.NUM_WORKERS,
                                             shuffle=False, pin_memory=True, collate_fn=custum_collate)
     
