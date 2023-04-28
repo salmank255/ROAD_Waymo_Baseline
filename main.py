@@ -56,7 +56,7 @@ def main():
     #  Name of the dataset only voc or coco are supported
     parser.add_argument('--DATASET', default='road', 
                         type=str,help='dataset being used')
-    parser.add_argument('--Test_DATASET', default='road', 
+    parser.add_argument('--TEST_DATASET', default='road', 
                         type=str,help='dataset used for testing')
     parser.add_argument('--TRAIN_SUBSETS', default='train,', 
                         type=str,help='Training SUBSETS seprated by ,')
@@ -254,7 +254,7 @@ def main():
                         vtf.ToTensorStack(),
                         vtf.Normalize(mean=args.MEANS,std=args.STDS)])
 
-    if args.Test_DATASET == 'roadpp':
+    if args.TEST_DATASET == 'roadpp':
         
         road_val_dataset = VideoDataset(args,'road', train=False, transform=val_transform, skip_step=skip_step, full_test=full_test)
         road_waymo_val_dataset = VideoDataset(args,'roadpp', train=False, transform=val_transform, skip_step=skip_step, full_test=full_test)
@@ -262,7 +262,7 @@ def main():
         logger.info('Done Loading ROAD Plus Plus (combined) Validation Dataset')
     
     else:
-        val_dataset = VideoDataset(args,args.Test_DATASET, train=False, transform=val_transform, skip_step=skip_step, full_test=full_test)
+        val_dataset = VideoDataset(args,args.TEST_DATASET, train=False, transform=val_transform, skip_step=skip_step, full_test=full_test)
         logger.info('Done Loading {} Validation Dataset'.format(args.DATASET))
 
     # resize one instance of val dataset to get wh

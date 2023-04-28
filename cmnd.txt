@@ -19,8 +19,8 @@ python main.py ../ ../ kinetics-pt/ --MODE=gen_dets --ARCH=resnet50 --MODEL_TYPE
 
 
 I3D - Combine
-CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python main.py ../ ../ kinetics-pt/ --MODE=train --ARCH=resnet50 --MODEL_TYPE=I3D --DATASET=Combine --TRAIN_SUBSETS=train --VAL_SUBSETS=val --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=15 --LR=0.0031 --MIN_SIZE=600
-python main.py ../ ../ kinetics-pt/ --MODE=gen_dets --ARCH=resnet50 --MODEL_TYPE=I3D --DATASET=Combine --TEST_SEQ_LEN=8 --TRAIN_SUBSETS=train --TEST_SUBSETS=test --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=8 --LR=0.0031 --MIN_SIZE=600
+CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python main.py ../ ../ kinetics-pt/ --MODE=train --ARCH=resnet50 --MODEL_TYPE=I3D --DATASET=roadpp --TEST_DATASET=roadpp --TRAIN_SUBSETS=train --VAL_SUBSETS=val --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=15 --LR=0.0031 --MIN_SIZE=600
+python main.py ../ ../ kinetics-pt/ --MODE=gen_dets --ARCH=resnet50 --MODEL_TYPE=I3D --DATASET=roadpp --TEST_DATASET=roadpp --TEST_SEQ_LEN=8 --TRAIN_SUBSETS=train --TEST_SUBSETS=test --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=8 --LR=0.0031 --MIN_SIZE=600
 
 
 SlowFast - Combine

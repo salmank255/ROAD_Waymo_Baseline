@@ -599,9 +599,9 @@ class VideoDataset(tutils.data.Dataset):
     def _make_lists_road_waymo(self):
         
         if self.MODE =='train':
-            self.anno_file  = os.path.join(self.root, 'road_plus_plus_trainval_v1.0.json')
+            self.anno_file  = os.path.join(self.root, 'road_waymo_trainval_v1.0.json')
         else:
-            self.anno_file  = os.path.join(self.root, 'road_plus_plus_test_v1.0.json')
+            self.anno_file  = os.path.join(self.root, 'road_waymo_test_v1.0.json')
         with open(self.anno_file,'r') as fff:
             final_annots = json.load(fff)
         
