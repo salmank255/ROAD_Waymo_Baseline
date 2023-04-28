@@ -255,9 +255,8 @@ def main():
                         vtf.Normalize(mean=args.MEANS,std=args.STDS)])
 
     if args.TEST_DATASET == 'roadpp':
-        
         road_val_dataset = VideoDataset(args,'road', train=False, transform=val_transform, skip_step=skip_step, full_test=full_test)
-        road_waymo_val_dataset = VideoDataset(args,'roadpp', train=False, transform=val_transform, skip_step=skip_step, full_test=full_test)
+        road_waymo_val_dataset = VideoDataset(args,'road_waymo', train=False, transform=val_transform, skip_step=skip_step, full_test=full_test)
         val_dataset = torch.utils.data.ConcatDataset([road_val_dataset,road_waymo_val_dataset])
         logger.info('Done Loading ROAD Plus Plus (combined) Validation Dataset')
     
