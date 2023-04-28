@@ -259,24 +259,34 @@ def main():
         road_waymo_val_dataset = VideoDataset(args,'road_waymo', train=False, transform=val_transform, skip_step=skip_step, full_test=full_test)
         val_dataset = torch.utils.data.ConcatDataset([road_val_dataset,road_waymo_val_dataset])
         logger.info('Done Loading ROAD Plus Plus (combined) Validation Dataset')
-    
+       
+        args.num_classes =  road_waymo_val_dataset.num_classes
+        args.label_types = road_waymo_val_dataset.label_types
+        args.num_label_types = road_waymo_val_dataset.num_label_types
+        args.all_classes =  road_waymo_val_dataset.all_classes
+        args.num_classes_list = road_waymo_val_dataset.num_classes_list
+        args.num_ego_classes = road_waymo_val_dataset.num_ego_classes
+        args.ego_classes = road_waymo_val_dataset.ego_classes
+
     else:
         val_dataset = VideoDataset(args,args.TEST_DATASET, train=False, transform=val_transform, skip_step=skip_step, full_test=full_test)
         logger.info('Done Loading {} Validation Dataset'.format(args.DATASET))
+        
+        args.num_classes =  val_dataset.num_classes
+        args.label_types = val_dataset.label_types
+        args.num_label_types = val_dataset.num_label_types
+        args.all_classes =  val_dataset.all_classes
+        args.num_classes_list = val_dataset.num_classes_list
+        args.num_ego_classes = val_dataset.num_ego_classes
+        args.ego_classes = val_dataset.ego_classes
+
+
 
     # resize one instance of val dataset to get wh
     args.wh = val_dataset[0][5]
     logger.info('wh (hight, width): {}'.format(args.wh))
 
-
-    args.num_classes =  val_dataset.num_classes
-    # one for objectness
-    args.label_types = val_dataset.label_types
-    args.num_label_types = val_dataset.num_label_types
-    args.all_classes =  val_dataset.all_classes
-    args.num_classes_list = val_dataset.num_classes_list
-    args.num_ego_classes = val_dataset.num_ego_classes
-    args.ego_classes = val_dataset.ego_classes
+    
     args.head_size = 256
     if args.MODE in ['train', 'val','gen_dets']:
         net = build_retinanet(args).cuda()
