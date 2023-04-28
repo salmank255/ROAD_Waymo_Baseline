@@ -955,7 +955,7 @@ def custum_collate(batch):
             temp_counts.append(bs.shape[0])
         assert seq_len == len(temp_counts)
         counts.append(temp_counts)
-    counts = np.asarray(counts, dtype=np.int)
+    counts = np.asarray(counts, dtype=np.int_)
     new_boxes = torch.zeros(len(boxes), seq_len, max_len, 4)
     new_targets = torch.zeros([len(boxes), seq_len, max_len, num_classes])
     for c1, bs_ in enumerate(boxes):
