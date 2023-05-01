@@ -86,6 +86,7 @@ class RetinaNet(nn.Module):
         if args.MODE == 'train':  # eval_iters only in test case
             self.criterion = FocalLoss(args)
 
+        self.warmup = args.warmup
         # self.ego_head = nn.Conv3d(self.head_size, args.num_ego_classes, kernel_size=(
         #     3, 1, 1), stride=1, padding=(1, 0, 0))
         # nn.init.constant_(self.ego_head.bias, bias_value)
@@ -140,6 +141,8 @@ class RetinaNet(nn.Module):
 
     ## Apply constraints layer
     def apply_constraints(self, conf, goal=None):
+        if self.warmup:
+            return conf
         shape = conf.shape
         conf = conf.reshape(-1, self.num_classes)
 

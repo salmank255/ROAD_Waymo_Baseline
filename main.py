@@ -179,6 +179,7 @@ def main():
     parser.add_argument('--CLIP', default=1., type=float, help="Gradient norm clipping limit")
     parser.add_argument('--EXP_NAME', default="", type=str, help="Custom experiment name")
     parser.add_argument('--tiny_dataset', default=False, type=str2bool)
+    parser.add_argument('--warmup', default=False, type=str2bool)
     parser.add_argument('--tiny_videoset', default="train_00000, train_00001, train_00002, train_00003, train_00004, train_00005", type=str)
 
     # Use CUDA_VISIBLE_DEVICES=0,1,4,6 to select GPUs to use
