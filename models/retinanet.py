@@ -85,21 +85,22 @@ class RetinaNet(nn.Module):
             3, 1, 1), stride=1, padding=(1, 0, 0))
         nn.init.constant_(self.ego_head.bias, bias_value)
 
-        # for domain classification adaptation
-        self.domain_head = nn.Sequential(
-            RevGrad(),
-            nn.Conv3d(self.head_size, 256, kernel_size=(3, 1, 1), padding=(1, 0, 0)),
-            nn.BatchNorm3d(256),
-            nn.ReLU(inplace=True),
-            nn.AdaptiveAvgPool3d((1, 1, 1)),
-            nn.Flatten(),
-            nn.Linear(256, 20),
-            nn.ReLU(),
-            nn.Linear(20, 1),
-            # nn.Linear(256, self.SEQ_LEN),
-            # nn.Unflatten(-1, (self.SEQ_LEN)), # smart trick to make a 1d vector into 2d 
-            # nn.Sigmoid()
-        )
+        if args.Domain_Adaptation:
+            # for domain classification adaptation
+            self.domain_head = nn.Sequential(
+                RevGrad(),
+                nn.Conv3d(self.head_size, 256, kernel_size=(3, 1, 1), padding=(1, 0, 0)),
+                nn.BatchNorm3d(256),
+                nn.ReLU(inplace=True),
+                nn.AdaptiveAvgPool3d((1, 1, 1)),
+                nn.Flatten(),
+                nn.Linear(256, 20),
+                nn.ReLU(),
+                nn.Linear(20, 1),
+                # nn.Linear(256, self.SEQ_LEN),
+                # nn.Unflatten(-1, (self.SEQ_LEN)), # smart trick to make a 1d vector into 2d 
+                # nn.Sigmoid()
+            )
 
     def forward(self, images, gt_boxes=None, gt_labels=None, ego_labels=None, counts=None, img_indexs=None, domain_labels=None, get_features=False):
         sources, ego_feat = self.backbone(images)

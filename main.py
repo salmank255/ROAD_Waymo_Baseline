@@ -230,6 +230,7 @@ def main():
             road_dataset = VideoDataset(args,'road', train=True, skip_step=train_skip_step, transform=train_transform)
             road_waymo_dataset = VideoDataset(args,'road_waymo', train=True, skip_step=train_skip_step, transform=train_transform)
             train_dataset = torch.utils.data.ConcatDataset([road_dataset,road_waymo_dataset])
+            train_dataset.video_list = road_dataset.video_list + road_waymo_dataset.video_list
             logger.info('Done Loading ROAD Plus Plus (combined) Train Dataset')
 
         else:        
@@ -265,6 +266,11 @@ def main():
         road_val_dataset = VideoDataset(args, 'road', train=False, transform=val_transform, skip_step=skip_step, full_test=full_test)
         road_waymo_val_dataset = VideoDataset(args, 'road_waymo', train=False, transform=val_transform, skip_step=skip_step, full_test=full_test)
         val_dataset = torch.utils.data.ConcatDataset([road_val_dataset,road_waymo_val_dataset])
+        
+        val_dataset.video_list = road_val_dataset.video_list + road_waymo_val_dataset.video_list
+        val_dataset.ids = road_val_dataset.ids + road_waymo_val_dataset.ids
+        val_dataset.numf_list = road_val_dataset.numf_list + road_waymo_val_dataset.numf_list
+
         logger.info('Done Loading ROAD Plus Plus (combined) Validation Dataset')
        
         args.num_classes =  road_waymo_val_dataset.num_classes

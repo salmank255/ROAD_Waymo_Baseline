@@ -364,23 +364,29 @@ class VideoDataset(tutils.data.Dataset):
 
         self.ANCHOR_TYPE =  args.ANCHOR_TYPE 
         self.DATASET = dataset
+        self.MODE = args.MODE
         # self.SUBSETS = subsets        
         if train == True:
             if self.DATASET == 'road':
                 self.SUBSETS = ['train_3']
             elif self.DATASET == 'road_waymo':
                 self.SUBSETS = ['train']
-        else:
+        elif self.MODE == 'Train':
             if self.DATASET == 'road':
                 self.SUBSETS = ['val_3']
             elif self.DATASET == 'road_waymo':
                 self.SUBSETS = ['val']
+        else:
+            if self.DATASET == 'road':
+                self.SUBSETS = ['test']
+            elif self.DATASET == 'road_waymo':
+                self.SUBSETS = ['test']
 
+    
         self.SEQ_LEN = args.SEQ_LEN
         self.BATCH_SIZE = args.BATCH_SIZE
         self.MIN_SEQ_STEP = args.MIN_SEQ_STEP
         self.MAX_SEQ_STEP = args.MAX_SEQ_STEP
-        self.MODE = args.MODE
         # self.MULIT_SCALE = args.MULIT_SCALE
         self.full_test = full_test
         self.skip_step = skip_step #max(skip_step, self.SEQ_LEN*self.MIN_SEQ_STEP/2)
@@ -747,8 +753,10 @@ class VideoDataset(tutils.data.Dataset):
 
     def _make_lists_road(self):
 
-        self.anno_file  = os.path.join(self.root, 'road_trainval_v1.0.json')
-
+        if self.MODE == 'Train':
+            self.anno_file  = os.path.join(self.root, 'road_trainval_v1.0.json')
+        else:
+            self.anno_file  = os.path.join(self.root, 'road_test_v1.0.json')
         with open(self.anno_file,'r') as fff:
             final_annots = json.load(fff)
         
