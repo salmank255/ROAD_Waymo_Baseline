@@ -636,6 +636,8 @@ def evaluate_frames(anno_file, det_file, subset, wh, iou_thresh=0.5, dataset='ro
     logger.info('Time taken to load for evaluation {}'.format(t1-t0))
     for nlt, label_type in enumerate(label_types):
         if label_type in ['av_actions', 'frame_actions']:
+            # Skip for ego actions
+            continue
             mAP, ap_all, ap_strs = eval_framewise_ego_actions(final_annots, detections[label_type], subset, dataset)
             re_all = [1.0 for _ in range(len(ap_all))]
             for apstr in ap_strs:
