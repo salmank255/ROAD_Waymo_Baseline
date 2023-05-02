@@ -181,7 +181,6 @@ def main():
     parser.add_argument('--CCN_CUSTOM_ORDER', default='', help="Custom centrality order (set CCN_CENTRALITY to custom)")
     parser.add_argument('--CLIP', default=1., type=float, help="Gradient norm clipping limit")
     parser.add_argument('--EXP_NAME', default="", type=str, help="Custom experiment name")
-    parser.add_argument('--tiny_dataset', default=False, type=str2bool)
     parser.add_argument('--warmup', default=0, type=int)
 
     # Use CUDA_VISIBLE_DEVICES=0,1,4,6 to select GPUs to use
