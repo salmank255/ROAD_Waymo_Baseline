@@ -250,11 +250,13 @@ def get_gt_video_list(anno_file, SUBSETS):
 
 
 def get_filtered_tubes(label_key, final_annots, videoname):
-    
+    if not label_key in final_annots['db'][videoname]:
+        return []
     key_tubes = final_annots['db'][videoname][label_key]
     all_labels = final_annots['all_'+label_key.replace('tubes','labels')]
     labels = final_annots[label_key.replace('tubes','labels')]
     filtered_tubes = []
+
     for _ , tube in key_tubes.items():
         label_id = tube['label_id']
         label = all_labels[label_id]
