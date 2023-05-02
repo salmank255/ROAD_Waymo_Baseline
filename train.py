@@ -68,7 +68,7 @@ def train(args, net, train_dataset, val_dataset):
     
     iteration = 0
     for epoch in range(args.START_EPOCH, args.MAX_EPOCHS + 1):
-        if epoch >= 5:
+        if epoch >= args.warmup:
             net.warmup = False
         net.train()
         
