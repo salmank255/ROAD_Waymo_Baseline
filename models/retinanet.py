@@ -41,7 +41,7 @@ class RetinaNet(nn.Module):
 
     """
 
-    def __init__(self, backbone, args):
+    def __init__(self, backbone, clayer, args):
         super(RetinaNet, self).__init__()
 
         self.num_classes = args.num_classes
@@ -53,7 +53,13 @@ class RetinaNet(nn.Module):
             self.anchors = KanchorBox()
         else:
             raise RuntimeError('Define correct anchor type')
-            
+
+        ## Moved activation inside net & added clayer
+        self.ccn_num_classes = args.ccn_num_classes
+        self.activation = torch.nn.Sigmoid().cuda()
+        self.clayer = clayer
+        self.detection_threshold = args.detection_threshold
+
         # print('Cell anchors\n', self.anchors.cell_anchors)
         # pdb.set_trace()
         self.ar = self.anchors.ar
@@ -86,8 +92,7 @@ class RetinaNet(nn.Module):
 
 
     # def forward(self, images, gt_boxes=None, gt_labels=None, ego_labels=None, counts=None, img_indexs=None, get_features=False, logic=None, Cplus=None, Cminus=None):
-    def forward(self, images, gt_boxes=None, gt_labels=None, counts=None, img_indexs=None, get_features=False, logic=None, Cplus=None, Cminus=None):
-        # sources, ego_feat = self.backbone(images)
+    def forward(self, images, gt_boxes=None, gt_labels=None, counts=None, img_indexs=None, get_features=False):        # sources, ego_feat = self.backbone(images)
         sources = self.backbone(images)
 
         # ego_preds = self.ego_head(
@@ -114,7 +119,7 @@ class RetinaNet(nn.Module):
             return flat_conf, features
         elif gt_boxes is not None:  # training mode
             # return self.criterion(flat_conf, flat_loc, gt_boxes, gt_labels, counts, ancohor_boxes, ego_preds, ego_labels, logic, Cplus, Cminus)
-            return self.criterion(flat_conf, flat_loc, gt_boxes, gt_labels, counts, ancohor_boxes, logic, Cplus, Cminus)
+            return self.criterion(flat_conf, flat_loc, gt_boxes, gt_labels, counts, ancohor_boxes, clayer=self.apply_constraints)
         else:  # otherwise testing mode
             decoded_boxes = []
             for b in range(flat_loc.shape[0]):
@@ -123,8 +128,39 @@ class RetinaNet(nn.Module):
                     # torch.stack([decode(flat_loc[b], ancohor_boxes) for b in range(flat_loc.shape[0])], 0),
                     temp_l.append(decode(flat_loc[b, s], ancohor_boxes))
                 decoded_boxes.append(torch.stack(temp_l, 0))
-            # return torch.stack(decoded_boxes, 0), flat_conf, ego_preds
+            flat_conf = self.apply_constraints(flat_conf)
             return torch.stack(decoded_boxes, 0), flat_conf
+
+
+    ## Apply constraints layer
+    def apply_constraints(self, conf, goal=None):
+            shape = conf.shape
+            conf = conf.reshape(-1, self.num_classes)
+
+            if goal is None:
+                # validating or testing
+                cut = self.detection_threshold.cutter(conf)
+                conf, uncut_conf = cut(conf)
+            else:
+                # training
+                goal = goal.reshape(-1, self.num_classes)
+                cut = self.detection_threshold.cutter(goal)
+                conf, uncut_conf = cut(conf)
+                goal, uncut_goal = cut(goal)
+
+            if conf.shape[0] > 0:
+                print("--- BEFORE ---")
+                print(conf[0])
+                if not goal is None: print(goal[0])
+
+            conf = self.clayer(conf, goal)
+
+            if conf.shape[0] > 0:
+                print("--- AFTER ---")
+                print(conf[0])
+
+            conf = uncut_conf(conf)
+            return conf.reshape(shape)
 
 
     def make_features(self,  shared_heads):
@@ -177,5 +213,5 @@ class RetinaNet(nn.Module):
         return layers
 
 
-def build_retinanet(args):
-    return RetinaNet(backbone_models(args), args)
+def build_retinanet(args, clayer):
+    return RetinaNet(backbone_models(args), clayer, args)

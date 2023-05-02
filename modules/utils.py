@@ -136,18 +136,19 @@ def set_args(args):
 def create_exp_name(args):
     """Create name of experiment using training parameters """
     splits = ''.join([split[0]+split[-1] for split in args.TRAIN_SUBSETS])
-    args.exp_name = '{:s}{:s}{:d}-P{:s}-b{:0d}s{:d}x{:d}x{:d}-{:s}{:s}-h{:d}x{:d}x{:d}'.format(
+    args.exp_name = '{:s}{:s}{:d}-P{:s}-b{:0d}s{:d}x{:d}x{:d}-{:s}{:s}-h{:d}x{:d}x{:d}-{:s}c{:f}'.format(
         args.ARCH, args.MODEL_TYPE,
         args.MIN_SIZE, args.model_init, args.BATCH_SIZE,
         args.SEQ_LEN, args.MIN_SEQ_STEP, args.MAX_SEQ_STEP,
         args.DATASET, splits, 
         args.HEAD_LAYERS, args.CLS_HEAD_TIME_SIZE,
         args.REG_HEAD_TIME_SIZE,
+        args.CCN_CENTRALITY,
+        args.CLIP,
         )
 
     args.SAVE_ROOT += args.DATASET+'/'
-    logic = args.LOGIC if args.LOGIC is not None else 'None'
-    args.SAVE_ROOT = args.SAVE_ROOT+'cache_t-norm_{:}_{:}/'.format(logic, args.req_loss_weight)+args.exp_name+'/'
+    args.SAVE_ROOT = args.SAVE_ROOT+'cache/'+args.exp_name+'/'
     if not os.path.isdir(args.SAVE_ROOT):
         print('Create: ', args.SAVE_ROOT)
         os.makedirs(args.SAVE_ROOT)

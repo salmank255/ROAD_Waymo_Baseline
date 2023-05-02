@@ -9,7 +9,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch, pdb, time
 from modules import box_utils
-from requirements_modules.req_losses import logical_requirements_loss
 
 
 # Credits:: from https://github.com/facebookresearch/maskrcnn-benchmark/blob/master/maskrcnn_benchmark/layers/smooth_l1_loss.py
@@ -57,15 +56,15 @@ class FocalLoss(nn.Module):
         self.positive_threshold = args.POSTIVE_THRESHOLD
         self.negative_threshold = args.NEGTIVE_THRESHOLD
         self.num_classes = args.num_classes
+        self.ccn_num_classes = args.ccn_num_classes
         self.num_label_types = args.num_label_types
         self.num_classes_list = args.num_classes_list
         self.alpha = 0.25
         self.gamma = 2.0
-        self.agentness_th = args.agentness_th
 
 
     # def forward(self, confidence, predicted_locations, gt_boxes, gt_labels, counts, anchors, ego_preds, ego_labels, logic, Cplus, Cminus):
-    def forward(self, confidence, predicted_locations, gt_boxes, gt_labels, counts, anchors, logic, Cplus, Cminus):
+    def forward(self, confidence, predicted_locations, gt_boxes, gt_labels, counts, anchors, clayer=None):
         ## gt_boxes, gt_labels, counts, ancohor_boxes
         
         """
@@ -154,36 +153,12 @@ class FocalLoss(nn.Module):
         
         masked_labels = all_labels[mask].reshape(-1, self.num_classes) # Remove Ignore labels
         masked_preds = preds[mask].reshape(-1, self.num_classes) # Remove Ignore preds
+
+        if not clayer is None and masked_labels.shape[0] > 0:
+            masked_preds = clayer(masked_preds, goal=masked_labels)
+        masked_preds = masked_preds[:, :self.ccn_num_classes]
+        masked_labels = masked_labels[:, :self.ccn_num_classes]
+
         cls_loss = sigmoid_focal_loss(masked_preds, masked_labels, num_pos, self.alpha, self.gamma)
 
-        # mask = ego_labels>-1
-        # numc = ego_preds.shape[-1]
-        # masked_preds = ego_preds[mask].reshape(-1, numc) # Remove Ignore preds
-        # masked_labels = ego_labels[mask].reshape(-1) # Remove Ignore labels
-        # one_hot_labels = get_one_hot_labels(masked_labels, numc)
-        # ego_loss = 0
-        # if one_hot_labels.shape[0]>0:
-        #     ego_loss = sigmoid_focal_loss(masked_preds, one_hot_labels, one_hot_labels.shape[0], self.alpha, self.gamma)
-        
-        # print(regression_loss, cls_loss, ego_loss)
-        if logic is None:
-            return regression_loss, cls_loss/8.0  # + ego_loss/4.0
-        else:
-            # do apply the t-norm on "background" boxes
-            # print('*' * 80)
-            # for th in range(0,1,0.01):
-            #     mask = masked_preds[:, 0] > th
-            #     print(th, mask.sum(), masked_preds.shape[0], mask.sum()/masked_preds.shape[0])
-            #     print('*'*80)
-
-            mask = masked_preds[:,0] > self.agentness_th
-            # print(masked_preds[:,0].max())
-            if mask.any():
-                # print(mask.sum(), masked_preds[:,0].shape)
-                foreground_masked_preds = masked_preds[mask]
-                # print('t-norm on {:}/{:} foreground/overall objects'.format(mask.sum(), masked_preds.shape[0]))
-                logic_based_loss = logical_requirements_loss(foreground_masked_preds, logic, Cplus, Cminus)
-            else:
-                # logic_based_loss = torch.tensor(0., dtype=torch.float32).cuda(device=masked_preds.device)
-                logic_based_loss = masked_preds.new_tensor(0.)
-            return regression_loss, cls_loss / 8.0, logic_based_loss
+        return regression_loss, cls_loss/8.0  # + ego_loss/4.0
