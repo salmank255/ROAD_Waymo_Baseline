@@ -148,16 +148,16 @@ class RetinaNet(nn.Module):
                 conf, uncut_conf = cut(conf)
                 goal, uncut_goal = cut(goal)
 
-            if conf.shape[0] > 0:
-                print("--- BEFORE ---")
-                print(conf[0])
-                if not goal is None: print(goal[0])
+            # if conf.shape[0] > 0:
+            #     print("--- BEFORE ---")
+            #     print(conf[0])
+            #     if not goal is None: print(goal[0])
 
             conf = self.clayer(conf, goal)
 
-            if conf.shape[0] > 0:
-                print("--- AFTER ---")
-                print(conf[0])
+            # if conf.shape[0] > 0:
+            #     print("--- AFTER ---")
+            #     print(conf[0])
 
             conf = uncut_conf(conf)
             return conf.reshape(shape)
