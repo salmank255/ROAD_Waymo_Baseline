@@ -367,7 +367,7 @@ class VideoDataset(tutils.data.Dataset):
         self.ANCHOR_TYPE =  args.ANCHOR_TYPE 
         self.DATASET = dataset
         self.MODE = args.MODE
-        # self.SUBSETS = subsets        
+        self.TEST_SUBSETS = args.TEST_SUBSETS  
         if train == True:
             if self.DATASET == 'road':
                 self.SUBSETS = ['train_3']
@@ -378,12 +378,16 @@ class VideoDataset(tutils.data.Dataset):
                 self.SUBSETS = ['val_3']
             elif self.DATASET == 'road_waymo':
                 self.SUBSETS = ['val']
-        else:
+        elif self.TEST_SUBSETS == ['val']:
+            if self.DATASET == 'road':
+                self.SUBSETS = ['val_3']
+            elif self.DATASET == 'road_waymo':
+                self.SUBSETS = ['val']
+        elif self.TEST_SUBSETS == ['test']:
             if self.DATASET == 'road':
                 self.SUBSETS = ['test']
             elif self.DATASET == 'road_waymo':
                 self.SUBSETS = ['test']
-
     
         self.SEQ_LEN = args.SEQ_LEN
         self.BATCH_SIZE = args.BATCH_SIZE
@@ -606,7 +610,7 @@ class VideoDataset(tutils.data.Dataset):
 
     def _make_lists_road_waymo(self):
         
-        if self.MODE =='train':
+        if self.MODE =='train' or self.TEST_SUBSETS == ['val']:
             self.anno_file  = os.path.join(self.root, 'road_waymo_trainval_v1.0.json')
         else:
             self.anno_file  = os.path.join(self.root, 'road_waymo_test_v1.0.json')
