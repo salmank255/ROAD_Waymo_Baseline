@@ -784,7 +784,7 @@ class VideoDataset(tutils.data.Dataset):
             numc = len(self.used_labels[name+'_labels'])
             self.num_classes_list.append(numc)
             self.num_classes += numc
-        counts = np.zeros((len(self.used_labels[self.label_types[-1] + '_labels']), num_label_type), dtype=np.int32)
+        counts = np.zeros((len(self.used_labels[self.label_types[1] + '_labels']), num_label_type), dtype=np.int32)
 
         # self.ego_classes = final_annots['av_action_labels']
         # self.num_ego_classes = len(self.ego_classes)
