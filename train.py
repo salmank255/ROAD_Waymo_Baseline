@@ -110,8 +110,8 @@ def run_train_both(args, train_data_loader, net, optimizer, epoch, iteration):
     domain_losses = AverageMeter()
     torch.cuda.synchronize()
     start = time.perf_counter()
-    
-    for internel_iter, ((images_s, gt_boxes, gt_labels, ego_labels, counts, img_indexs, wh_s), (images_t, _, _, _, _, _, wh_t)) in enumerate(train_data_loader):
+
+    for internel_iter, ((images_s, gt_boxes, gt_labels, counts, img_indexs, wh_s), (images_t, _, _, _, _, wh_t)) in enumerate(train_data_loader):
         iteration += 1
         
         images_s = images_s.cuda(0, non_blocking=True)
@@ -125,7 +125,7 @@ def run_train_both(args, train_data_loader, net, optimizer, epoch, iteration):
         gt_boxes = gt_boxes.cuda(0, non_blocking=True)
         gt_labels = gt_labels.cuda(0, non_blocking=True)
         counts = counts.cuda(0, non_blocking=True)
-        ego_labels = ego_labels.cuda(0, non_blocking=True)
+        # ego_labels = ego_labels.cuda(0, non_blocking=True)
 
         # forward
         torch.cuda.synchronize()
@@ -134,8 +134,9 @@ def run_train_both(args, train_data_loader, net, optimizer, epoch, iteration):
         # print(images.size(), anchors.size())
         optimizer.zero_grad()
         # pdb.set_trace()
-        
-        loss_l, loss_c, loss_d_s = net(images_s, gt_boxes, gt_labels, ego_labels, counts, img_indexs, domain_y_s)
+
+        # loss_l, loss_c, loss_d_s, loss_r = net(images_s, gt_boxes, gt_labels, counts, img_indexs, domain_y_s, logic=args.LOGIC, Cplus=Cplus, Cminus=Cminus)
+        loss_l, loss_c, loss_d_s = net(images_s, gt_boxes, gt_labels, counts, img_indexs, domain_y_s)
         loss_d_t = net(images_t, None, None, None, None, None, domain_y_t)
         loss_d = loss_d_s + loss_d_t
         loss_l, loss_c, loss_d = loss_l.mean(), loss_c.mean(), loss_d.mean()
