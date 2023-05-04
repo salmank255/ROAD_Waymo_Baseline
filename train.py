@@ -16,7 +16,7 @@ from modules import utils
 logger = utils.get_logger(__name__)
 
 
-def train(args, net, train_dataset, val_dataset):
+def train(args, net, val_dataset, train_dataset, train2_dataset=None):
     
     optimizer, scheduler, solver_print_str = get_optim(args, net)
 
@@ -47,8 +47,8 @@ def train(args, net, train_dataset, val_dataset):
     logger.info(solver_print_str)
 
 
-    logger.info(train_dataset.print_str)
-    logger.info(val_dataset.print_str)
+    # logger.info(train_dataset.print_str)
+    # logger.info(val_dataset.print_str)
     epoch_size = len(train_dataset) // args.BATCH_SIZE
     args.MAX_ITERS = args.MAX_EPOCHS*epoch_size
 
@@ -61,7 +61,15 @@ def train(args, net, train_dataset, val_dataset):
     logger.info('Training FPN with {} + {} as backbone '.format(args.ARCH, args.MODEL_TYPE))
 
 
-    train_data_loader = data_utils.DataLoader(train_dataset, args.BATCH_SIZE, num_workers=args.NUM_WORKERS,
+    
+    if train2_dataset is not None:
+        train1_data_loader = data_utils.DataLoader(train_dataset, args.BATCH_SIZE//2, num_workers=args.NUM_WORKERS,
+                                  shuffle=True, pin_memory=True, collate_fn=custum_collate, drop_last=True)
+        train2_data_loader = data_utils.DataLoader(train2_dataset, args.BATCH_SIZE//2, num_workers=args.NUM_WORKERS,
+                                  shuffle=True, pin_memory=True, collate_fn=custum_collate, drop_last=True)
+       
+    else:
+        train_data_loader = data_utils.DataLoader(train_dataset, args.BATCH_SIZE, num_workers=args.NUM_WORKERS,
                                   shuffle=True, pin_memory=True, collate_fn=custum_collate, drop_last=True)
     
     val_data_loader = data_utils.DataLoader(val_dataset, args.BATCH_SIZE, num_workers=args.NUM_WORKERS,
@@ -77,13 +85,114 @@ def train(args, net, train_dataset, val_dataset):
                 net.module.backbone.apply(utils.set_bn_eval)
             else:
                 net.backbone.apply(utils.set_bn_eval)
-        iteration = run_train(args, train_data_loader, net, optimizer, epoch, iteration) 
+        
+        if train2_dataset is not None:
+            train_data_loader = zip(train1_data_loader, train2_data_loader)
+            iteration = run_train_both(args, train_data_loader, net, optimizer, epoch, iteration) 
+        else:
+            iteration = run_train(args, train_data_loader, net, optimizer, epoch, iteration)
         
         if epoch % args.VAL_STEP == 0 or epoch == args.MAX_EPOCHS:
             net.eval()
             run_val(args, val_data_loader, val_dataset, net, epoch, iteration)
 
         scheduler.step()
+
+
+
+def run_train_both(args, train_data_loader, net, optimizer, epoch, iteration):
+
+    batch_time = AverageMeter()
+    data_time = AverageMeter()
+    losses = AverageMeter()
+    loc_losses = AverageMeter()
+    cls_losses = AverageMeter()
+    domain_losses = AverageMeter()
+    torch.cuda.synchronize()
+    start = time.perf_counter()
+    
+    for internel_iter, ((images_s, gt_boxes, gt_labels, ego_labels, counts, img_indexs, wh_s), (images_t, _, _, _, _, _, wh_t)) in enumerate(train_data_loader):
+        iteration += 1
+        
+        images_s = images_s.cuda(0, non_blocking=True)
+        domain_y_s = torch.ones(images_s.shape[0])
+        domain_y_s = domain_y_s.cuda(0, non_blocking=True)
+
+        images_t = images_t.cuda(0, non_blocking=True)
+        domain_y_t = torch.zeros(images_t.shape[0])
+        domain_y_t = domain_y_t.cuda(0, non_blocking=True)
+
+        gt_boxes = gt_boxes.cuda(0, non_blocking=True)
+        gt_labels = gt_labels.cuda(0, non_blocking=True)
+        counts = counts.cuda(0, non_blocking=True)
+        ego_labels = ego_labels.cuda(0, non_blocking=True)
+
+        # forward
+        torch.cuda.synchronize()
+        data_time.update(time.perf_counter() - start)
+
+        # print(images.size(), anchors.size())
+        optimizer.zero_grad()
+        # pdb.set_trace()
+        
+        loss_l, loss_c, loss_d_s = net(images_s, gt_boxes, gt_labels, ego_labels, counts, img_indexs, domain_y_s)
+        loss_d_t = net(images_t, None, None, None, None, None, domain_y_t)
+        loss_d = loss_d_s + loss_d_t
+        loss_l, loss_c, loss_d = loss_l.mean(), loss_c.mean(), loss_d.mean()
+        loss = loss_l + loss_c + loss_d
+
+        loss.backward()
+        optimizer.step()
+        
+        loc_loss = loss_l.item()
+        conf_loss = loss_c.item()
+        domain_loss = loss_d.item()
+        if math.isnan(loc_loss) or loc_loss>300:
+            lline = '\n\n\n We got faulty LOCATION loss {} {} \n\n\n'.format(loc_loss, conf_loss)
+            logger.info(lline)
+            loc_loss = 20.0
+        if math.isnan(conf_loss) or  conf_loss>300:
+            lline = '\n\n\n We got faulty CLASSIFICATION loss {} {} \n\n\n'.format(loc_loss, conf_loss)
+            logger.info(lline)
+            conf_loss = 20.0
+        if math.isnan(domain_loss) or  domain_loss>300:
+            lline = '\n\n\n We got faulty DOMAIN loss {} {} {} \n\n\n'.format(loc_loss, conf_loss, domain_loss)
+            logger.info(lline)
+            domain_loss = 20.0
+        
+        loc_losses.update(loc_loss)
+        cls_losses.update(conf_loss)
+        domain_losses.update(domain_loss)
+        losses.update((loc_loss + conf_loss + domain_loss)/3.0)
+
+        torch.cuda.synchronize()
+        batch_time.update(time.perf_counter() - start)
+        start = time.perf_counter()
+
+        if internel_iter % args.LOG_STEP == 0 and iteration > args.LOG_START and internel_iter>0:
+            if args.TENSORBOARD:
+                loss_group = dict()
+                loss_group['Classification'] = cls_losses.val
+                loss_group['Localisation'] = loc_losses.val
+                loss_group['Domain'] = domain_losses.val
+                loss_group['Overall'] = losses.val
+                args.sw.add_scalars('Losses', loss_group, iteration)
+
+            print_line = 'Itration [{:d}/{:d}]{:06d}/{:06d} loc-loss {:.2f}({:.2f}) cls-loss {:.2f}({:.2f}) ' \
+                        'dom-loss {:.2f}({:.2f}) average-loss {:.2f}({:.2f}) DataTime {:0.2f}({:0.2f}) Timer {:0.2f}({:0.2f})'.format( epoch, 
+                        args.MAX_EPOCHS, iteration, args.MAX_ITERS*2, loc_losses.val, loc_losses.avg, cls_losses.val,
+                        cls_losses.avg, domain_losses.val, domain_losses.avg, losses.val, losses.avg, 10*data_time.val, 10*data_time.avg, 10*batch_time.val, 10*batch_time.avg)
+
+            logger.info(print_line)
+            if internel_iter % (args.LOG_STEP*20) == 0:
+                logger.info(args.exp_name)
+    logger.info('Saving state, epoch:' + str(epoch))
+    torch.save(net.state_dict(), '{:s}/model_{:06d}.pth'.format(args.SAVE_ROOT, epoch))
+    torch.save(optimizer.state_dict(), '{:s}/optimizer_{:06d}.pth'.format(args.SAVE_ROOT, epoch))
+       
+    return iteration
+
+
 
 def run_train(args, train_data_loader, net, optimizer, epoch, iteration):
 

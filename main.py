@@ -54,8 +54,12 @@ def main():
                     type=int, help='Temporal kernel size of regression head')
     
     #  Name of the dataset only voc or coco are supported
+    parser.add_argument('--Domain_Adaptation', default=False, 
+                        type=str2bool,help='Domain Adaptation')
     parser.add_argument('--DATASET', default='road', 
                         type=str,help='dataset being used')
+    parser.add_argument('--TEST_DATASET', default='road', 
+                        type=str,help='dataset used for testing')
     parser.add_argument('--TRAIN_SUBSETS', default='train,', 
                         type=str,help='Training SUBSETS seprated by ,')
     parser.add_argument('--VAL_SUBSETS', default='val', 
@@ -64,6 +68,8 @@ def main():
                         type=str,help='Testing SUBSETS seprated by ,')
     # Input size of image only 600 is supprted at the moment 
     parser.add_argument('--MIN_SIZE', default=960, 
+                        type=int, help='Input Size for FPN')
+    parser.add_argument('--MAX_SIZE', default=1280, 
                         type=int, help='Input Size for FPN')
     
     #  data loading argumnets
@@ -205,10 +211,12 @@ def main():
     if args.MODE in ['train','val']:
         # args.CONF_THRESH = 0.05
         args.SUBSETS = args.TRAIN_SUBSETS
+        
+        
         train_transform = transforms.Compose([
-                            vtf.ResizeClip(args.MIN_SIZE, args.MAX_SIZE),
-                            vtf.ToTensorStack(),
-                            vtf.Normalize(mean=args.MEANS, std=args.STDS)])
+                vtf.ResizeClip_Fixed(args.MIN_SIZE, args.MAX_SIZE),
+                vtf.ToTensorStack(),
+                vtf.Normalize(mean=args.MEANS, std=args.STDS)])
         
         # train_skip_step = args.SEQ_LEN
         # if args.SEQ_LEN>4 and args.SEQ_LEN<=10:
@@ -219,8 +227,23 @@ def main():
         else:
             train_skip_step = args.SEQ_LEN 
 
-        train_dataset = VideoDataset(args, train=True, skip_step=train_skip_step, transform=train_transform)
-        logger.info('Done Loading Dataset Train Dataset')
+        if args.Domain_Adaptation:
+            args.DATASET = 'roadpp'
+            args.TEST_DATASET = 'road_waymo'
+            logger.info('Domain Adaptation: {} --> {}'.format(args.DATASET, args.TEST_DATASET))
+
+        if args.DATASET == 'roadpp':
+            road_dataset = VideoDataset(args,'road', train=True, skip_step=train_skip_step, transform=train_transform)
+            road_waymo_dataset = VideoDataset(args,'road_waymo', train=True, skip_step=train_skip_step, transform=train_transform)
+            train_dataset = torch.utils.data.ConcatDataset([road_dataset,road_waymo_dataset])
+            train_dataset.video_list = road_dataset.video_list + road_waymo_dataset.video_list
+            logger.info('Done Loading ROAD Plus Plus (combined) Train Dataset')
+
+        else:        
+            train_dataset = VideoDataset(args,args.DATASET, train=True, skip_step=train_skip_step, transform=train_transform)
+            logger.info('Done Loading {} Train Dataset'.format(args.DATASET))
+
+
         ## For validation set
         full_test = False
         args.SUBSETS = args.VAL_SUBSETS
@@ -240,29 +263,49 @@ def main():
 
         skip_step = args.SEQ_LEN - args.skip_beggning
 
-
     val_transform = transforms.Compose([ 
-                        vtf.ResizeClip(args.MIN_SIZE, args.MAX_SIZE),
+                        vtf.ResizeClip_Fixed(args.MIN_SIZE, args.MAX_SIZE),
                         vtf.ToTensorStack(),
                         vtf.Normalize(mean=args.MEANS,std=args.STDS)])
-    
 
-    val_dataset = VideoDataset(args, train=False, transform=val_transform, skip_step=skip_step, full_test=full_test)
-    logger.info('Done Loading Dataset Validation Dataset')
+    if args.TEST_DATASET == 'roadpp':
+        road_val_dataset = VideoDataset(args, 'road', train=False, transform=val_transform, skip_step=skip_step, full_test=full_test)
+        road_waymo_val_dataset = VideoDataset(args, 'road_waymo', train=False, transform=val_transform, skip_step=skip_step, full_test=full_test)
+        val_dataset = torch.utils.data.ConcatDataset([road_val_dataset,road_waymo_val_dataset])
+        
+        val_dataset.video_list = road_val_dataset.video_list + road_waymo_val_dataset.video_list
+        val_dataset.ids = road_val_dataset.ids + road_waymo_val_dataset.ids
+        val_dataset.numf_list = road_val_dataset.numf_list + road_waymo_val_dataset.numf_list
+
+        logger.info('Done Loading ROAD Plus Plus (combined) Validation Dataset')
+       
+        args.num_classes =  road_waymo_val_dataset.num_classes
+        args.label_types = road_waymo_val_dataset.label_types
+        args.num_label_types = road_waymo_val_dataset.num_label_types
+        args.all_classes =  road_waymo_val_dataset.all_classes
+        args.num_classes_list = road_waymo_val_dataset.num_classes_list
+        #args.num_ego_classes = road_waymo_val_dataset.num_ego_classes
+        #args.ego_classes = road_waymo_val_dataset.ego_classes
+
+    else:
+        val_dataset = VideoDataset(args, args.TEST_DATASET, train=False, transform=val_transform, skip_step=skip_step, full_test=full_test)
+        logger.info('Done Loading {} Validation Dataset'.format(args.TEST_DATASET))
+        
+        args.num_classes =  val_dataset.num_classes
+        args.label_types = val_dataset.label_types
+        args.num_label_types = val_dataset.num_label_types
+        args.all_classes =  val_dataset.all_classes
+        args.num_classes_list = val_dataset.num_classes_list
+        #args.num_ego_classes = val_dataset.num_ego_classes
+        #args.ego_classes = val_dataset.ego_classes
+
+
 
     # resize one instance of val dataset to get wh
     args.wh = val_dataset[0][5] if not args.tiny_dataset else train_dataset[0][5]
     logger.info('wh (hight, width): {}'.format(args.wh))
 
-
-    args.num_classes =  val_dataset.num_classes
-    # one for objectness
-    args.label_types = val_dataset.label_types
-    args.num_label_types = val_dataset.num_label_types
-    args.all_classes =  val_dataset.all_classes
-    args.num_classes_list = val_dataset.num_classes_list
-    # args.num_ego_classes = val_dataset.num_ego_classes
-    # args.ego_classes = val_dataset.ego_classes
+    
     args.head_size = 256
     if args.MODE in ['train', 'val','gen_dets']:
         net = build_retinanet(args).cuda()
@@ -279,7 +322,10 @@ def main():
                 net.module.backbone.apply(utils.set_bn_eval)
             else:
                 net.backbone.apply(utils.set_bn_eval)
-        train(args, net, train_dataset, val_dataset)
+        if args.Domain_Adaptation:
+            train(args, net, val_dataset, road_dataset, road_waymo_dataset)
+        else:
+            train(args, net, val_dataset, train_dataset)
     elif args.MODE == 'val':
         val(args, net, val_dataset)
     elif args.MODE == 'gen_dets':

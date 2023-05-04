@@ -21,6 +21,7 @@ import pdb
 import math
 import torch.nn as nn
 import modules.utils as utils
+from pytorch_revgrad import RevGrad # for domain adaptation
 
 logger = utils.get_logger(__name__)
 
@@ -84,15 +85,41 @@ class RetinaNet(nn.Module):
         #     3, 1, 1), stride=1, padding=(1, 0, 0))
         # nn.init.constant_(self.ego_head.bias, bias_value)
 
+        if args.Domain_Adaptation:
+            # for domain classification adaptation
+            self.domain_head = nn.Sequential(
+                RevGrad(),
+                nn.Conv3d(self.head_size, 256, kernel_size=(3, 1, 1), padding=(1, 0, 0)),
+                nn.BatchNorm3d(256),
+                nn.ReLU(inplace=True),
+                nn.AdaptiveAvgPool3d((1, 1, 1)),
+                nn.Flatten(),
+                nn.Linear(256, 20),
+                nn.ReLU(),
+                nn.Linear(20, 1),
+                # nn.Linear(256, self.SEQ_LEN),
+                # nn.Unflatten(-1, (self.SEQ_LEN)), # smart trick to make a 1d vector into 2d 
+                # nn.Sigmoid()
+            )
 
-    # def forward(self, images, gt_boxes=None, gt_labels=None, ego_labels=None, counts=None, img_indexs=None, get_features=False, logic=None, Cplus=None, Cminus=None):
-    def forward(self, images, gt_boxes=None, gt_labels=None, counts=None, img_indexs=None, get_features=False, logic=None, Cplus=None, Cminus=None):
-        # sources, ego_feat = self.backbone(images)
+    def forward(self, images, gt_boxes=None, gt_labels=None, counts=None, img_indexs=None, domain_labels=None, get_features=False, logic=None, Cplus=None, Cminus=None):
         sources = self.backbone(images)
+        
+        #if domain_labels is not None:
+        #    domain_preds = self.domain_head(ego_feat).squeeze(0)
 
-        # ego_preds = self.ego_head(
-        #     ego_feat).squeeze(-1).squeeze(-1).permute(0, 2, 1).contiguous()
+        #    if torch.all(domain_labels == 0) :  
+        #        domain_loss_fn = nn.BCEWithLogitsLoss()
+        #        domain_preds = domain_preds.squeeze()
+        #        domain_loss = domain_loss_fn(domain_preds, domain_labels)
+        #        return domain_loss
+        #else:
+        #    domain_preds = None
 
+        #ego_preds = self.ego_head(
+        #    ego_feat).squeeze(-1).squeeze(-1).permute(0, 2, 1).contiguous()
+        domain_preds = None
+        
         grid_sizes = [feature_map.shape[-2:] for feature_map in sources]
         ancohor_boxes = self.anchors(grid_sizes)
         
@@ -114,7 +141,7 @@ class RetinaNet(nn.Module):
             return flat_conf, features
         elif gt_boxes is not None:  # training mode
             # return self.criterion(flat_conf, flat_loc, gt_boxes, gt_labels, counts, ancohor_boxes, ego_preds, ego_labels, logic, Cplus, Cminus)
-            return self.criterion(flat_conf, flat_loc, gt_boxes, gt_labels, counts, ancohor_boxes, logic, Cplus, Cminus)
+            return self.criterion(flat_conf, flat_loc, gt_boxes, gt_labels, counts, ancohor_boxes, domain_preds, domain_labels, logic, Cplus, Cminus)
         else:  # otherwise testing mode
             decoded_boxes = []
             for b in range(flat_loc.shape[0]):

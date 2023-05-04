@@ -63,9 +63,11 @@ class FocalLoss(nn.Module):
         self.gamma = 2.0
         self.agentness_th = args.agentness_th
 
+        # for domain classification adaptation
+        self.domain_loss_fn = nn.BCEWithLogitsLoss() # nn.BCELoss # nn.CrossEntropyLoss()
 
     # def forward(self, confidence, predicted_locations, gt_boxes, gt_labels, counts, anchors, ego_preds, ego_labels, logic, Cplus, Cminus):
-    def forward(self, confidence, predicted_locations, gt_boxes, gt_labels, counts, anchors, logic, Cplus, Cminus):
+    def forward(self, confidence, predicted_locations, gt_boxes, gt_labels, counts, anchors, domain_preds=None, domain_labels=None, logic, Cplus, Cminus):
         ## gt_boxes, gt_labels, counts, ancohor_boxes
         
         """
@@ -164,6 +166,13 @@ class FocalLoss(nn.Module):
         # ego_loss = 0
         # if one_hot_labels.shape[0]>0:
         #     ego_loss = sigmoid_focal_loss(masked_preds, one_hot_labels, one_hot_labels.shape[0], self.alpha, self.gamma)
+        
+        # for domain classification adaptation
+        # domain_labels = F.one_hot(domain_labels, num_classes=2).float()
+        if domain_preds is not None and domain_labels is not None:
+            domain_preds = domain_preds.squeeze()
+            domain_loss = self.domain_loss_fn(domain_preds, domain_labels)
+            return regression_loss, cls_loss/8.0 , domain_loss
         
         # print(regression_loss, cls_loss, ego_loss)
         if logic is None:

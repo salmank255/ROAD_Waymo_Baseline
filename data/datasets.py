@@ -252,11 +252,13 @@ def get_gt_video_list(anno_file, SUBSETS):
 
 
 def get_filtered_tubes(label_key, final_annots, videoname):
-    
+    if not label_key in final_annots['db'][videoname]:
+        return []
     key_tubes = final_annots['db'][videoname][label_key]
     all_labels = final_annots['all_'+label_key.replace('tubes','labels')]
     labels = final_annots[label_key.replace('tubes','labels')]
     filtered_tubes = []
+
     for _ , tube in key_tubes.items():
         label_id = tube['label_id']
         label = all_labels[label_id]
@@ -361,17 +363,38 @@ class VideoDataset(tutils.data.Dataset):
     ROAD Detection dataset class for pytorch dataloader
     """
 
-    def __init__(self, args, train=True, input_type='rgb', transform=None, 
+    def __init__(self, args, dataset, train=True, input_type='rgb', transform=None, 
                 skip_step=1, full_test=False):
 
         self.ANCHOR_TYPE =  args.ANCHOR_TYPE 
-        self.DATASET = args.DATASET
-        self.SUBSETS = args.SUBSETS
+        self.DATASET = dataset
+        self.MODE = args.MODE
+        self.TEST_SUBSETS = args.TEST_SUBSETS  
+        if train == True:
+            if self.DATASET == 'road':
+                self.SUBSETS = ['train_3']
+            elif self.DATASET == 'road_waymo':
+                self.SUBSETS = ['train']
+        elif self.MODE == 'Train':
+            if self.DATASET == 'road':
+                self.SUBSETS = ['val_3']
+            elif self.DATASET == 'road_waymo':
+                self.SUBSETS = ['val']
+        elif self.TEST_SUBSETS == ['val']:
+            if self.DATASET == 'road':
+                self.SUBSETS = ['val_3']
+            elif self.DATASET == 'road_waymo':
+                self.SUBSETS = ['val']
+        elif self.TEST_SUBSETS == ['test']:
+            if self.DATASET == 'road':
+                self.SUBSETS = ['test']
+            elif self.DATASET == 'road_waymo':
+                self.SUBSETS = ['test']
+    
         self.SEQ_LEN = args.SEQ_LEN
         self.BATCH_SIZE = args.BATCH_SIZE
         self.MIN_SEQ_STEP = args.MIN_SEQ_STEP
         self.MAX_SEQ_STEP = args.MAX_SEQ_STEP
-        self.MODE = args.MODE
         # self.MULIT_SCALE = args.MULIT_SCALE
         self.full_test = full_test
         self.skip_step = skip_step #max(skip_step, self.SEQ_LEN*self.MIN_SEQ_STEP/2)
@@ -379,25 +402,32 @@ class VideoDataset(tutils.data.Dataset):
         # self.input_type = input_type
         self.input_type = input_type+'-images'
         self.train = train
-        self.root = args.DATA_ROOT + args.DATASET + '/'
+        self.root = args.DATA_ROOT + self.DATASET + '/'
         self._imgpath = os.path.join(self.root, self.input_type)
         self.anno_root = self.root
         # if len(args.ANNO_ROOT)>1:
         #     self.anno_root = args.ANNO_ROOT 
+        self.used_labels = {"agent_labels": ["Ped", "Car", "Cyc", "Mobike", "SmalVeh", "MedVeh", "LarVeh", "Bus", "EmVeh", "TL"],
+                       "action_labels": ["Red", "Amber", "Green", "MovAway", "MovTow", "Mov", "Rev", "Brake", "Stop", "IncatLft", "IncatRht", "HazLit", "TurLft", "TurRht", "MovRht", "MovLft", "Ovtak", "Wait2X", "XingFmLft", "XingFmRht", "Xing", "PushObj"],
+                       "loc_labels": ["VehLane", "OutgoLane", "OutgoCycLane", "OutgoBusLane", "IncomLane", "IncomCycLane", "IncomBusLane", "Pav", "LftPav", "RhtPav", "Jun", "xing", "BusStop", "parking", "LftParking", "rightParking"],
+                       "duplex_labels": ["Ped-MovAway", "Ped-MovTow", "Ped-Mov", "Ped-Stop", "Ped-Wait2X", "Ped-XingFmLft", "Ped-XingFmRht", "Ped-Xing", "Ped-PushObj", "Car-MovAway", "Car-MovTow", "Car-Brake", "Car-Stop", "Car-IncatLft", "Car-IncatRht", "Car-HazLit", "Car-TurLft", "Car-TurRht", "Car-MovRht", "Car-MovLft", "Car-XingFmLft", "Car-XingFmRht", "Cyc-MovAway", "Cyc-MovTow", "Cyc-Stop", "Mobike-Stop", "MedVeh-MovAway", "MedVeh-MovTow", "MedVeh-Brake", "MedVeh-Stop", "MedVeh-IncatLft", "MedVeh-IncatRht", "MedVeh-HazLit", "MedVeh-TurRht", "MedVeh-XingFmLft", "MedVeh-XingFmRht", "LarVeh-MovAway", "LarVeh-MovTow", "LarVeh-Stop", "LarVeh-HazLit", "Bus-MovAway", "Bus-MovTow", "Bus-Brake", "Bus-Stop", "Bus-HazLit", "EmVeh-Stop", "TL-Red", "TL-Amber", "TL-Green"], 
+                       "triplet_labels": ["Ped-MovAway-LftPav", "Ped-MovAway-RhtPav", "Ped-MovAway-Jun", "Ped-MovTow-LftPav", "Ped-MovTow-RhtPav", "Ped-MovTow-Jun", "Ped-Mov-OutgoLane", "Ped-Mov-Pav", "Ped-Mov-RhtPav", "Ped-Stop-OutgoLane", "Ped-Stop-Pav", "Ped-Stop-LftPav", "Ped-Stop-RhtPav", "Ped-Stop-BusStop", "Ped-Wait2X-RhtPav", "Ped-Wait2X-Jun", "Ped-XingFmLft-Jun", "Ped-XingFmRht-Jun", "Ped-XingFmRht-xing", "Ped-Xing-Jun", "Ped-PushObj-LftPav", "Ped-PushObj-RhtPav", "Car-MovAway-VehLane", "Car-MovAway-OutgoLane", "Car-MovAway-Jun", "Car-MovTow-VehLane", "Car-MovTow-IncomLane", "Car-MovTow-Jun", "Car-Brake-VehLane", "Car-Brake-OutgoLane", "Car-Brake-Jun", "Car-Stop-VehLane", "Car-Stop-OutgoLane", "Car-Stop-IncomLane", "Car-Stop-Jun", "Car-Stop-parking", "Car-IncatLft-VehLane", "Car-IncatLft-OutgoLane", "Car-IncatLft-IncomLane", "Car-IncatLft-Jun", "Car-IncatRht-VehLane", "Car-IncatRht-OutgoLane", "Car-IncatRht-IncomLane", "Car-IncatRht-Jun", "Car-HazLit-IncomLane", "Car-TurLft-VehLane", "Car-TurLft-Jun", "Car-TurRht-Jun", "Car-MovRht-OutgoLane", "Car-MovLft-VehLane", "Car-MovLft-OutgoLane", "Car-XingFmLft-Jun", "Car-XingFmRht-Jun", "Cyc-MovAway-OutgoCycLane", "Cyc-MovAway-RhtPav", "Cyc-MovTow-IncomLane", "Cyc-MovTow-RhtPav", "MedVeh-MovAway-VehLane", "MedVeh-MovAway-OutgoLane", "MedVeh-MovAway-Jun", "MedVeh-MovTow-IncomLane", "MedVeh-MovTow-Jun", "MedVeh-Brake-VehLane", "MedVeh-Brake-OutgoLane", "MedVeh-Brake-Jun", "MedVeh-Stop-VehLane", "MedVeh-Stop-OutgoLane", "MedVeh-Stop-IncomLane", "MedVeh-Stop-Jun", "MedVeh-Stop-parking", "MedVeh-IncatLft-IncomLane", "MedVeh-IncatRht-Jun", "MedVeh-TurRht-Jun", "MedVeh-XingFmLft-Jun", "MedVeh-XingFmRht-Jun", "LarVeh-MovAway-VehLane", "LarVeh-MovTow-IncomLane", "LarVeh-Stop-VehLane", "LarVeh-Stop-Jun", "Bus-MovAway-OutgoLane", "Bus-MovTow-IncomLane", "Bus-Stop-VehLane", "Bus-Stop-OutgoLane", "Bus-Stop-IncomLane", "Bus-Stop-Jun", "Bus-HazLit-OutgoLane"]}
+        
         self.tiny_dataset = args.tiny_dataset
         self.tiny_videoset = args.tiny_videoset.split(',')
 
         # self.image_sets = image_sets
         self.transform = transform
         self.ids = list()
+        print(self.DATASET)
         if self.DATASET == 'road':
             self._make_lists_road()  
         elif self.DATASET == 'ucf24':
             self._make_lists_ucf24() 
         elif self.DATASET == 'ava':
             self._make_lists_ava() 
-        elif self.DATASET == 'roadpp':
-            self._make_lists_roadpp() 
+        elif self.DATASET == 'road_waymo':
+            self._make_lists_road_waymo() 
 
         else:
             raise Exception('Specfiy corect dataset')
@@ -583,12 +613,12 @@ class VideoDataset(tutils.data.Dataset):
         self.print_str = ptrstr
         
 
-    def _make_lists_roadpp(self):
+    def _make_lists_road_waymo(self):
         
-        if self.MODE =='train':
-            self.anno_file  = os.path.join(self.root, 'road_plus_plus_trainval_v1.0.json')
+        if self.MODE =='train' or self.TEST_SUBSETS == ['val']:
+            self.anno_file  = os.path.join(self.root, 'road_waymo_trainval_v1.0.json')
         else:
-            self.anno_file  = os.path.join(self.root, 'road_plus_plus_test_v1.0.json')
+            self.anno_file  = os.path.join(self.root, 'road_waymo_test_v1.0.json')
         with open(self.anno_file,'r') as fff:
             final_annots = json.load(fff)
         
@@ -601,45 +631,24 @@ class VideoDataset(tutils.data.Dataset):
         num_label_type = len(self.label_types)  # 5
         self.num_classes = 1  ## one for presence
         self.num_classes_list = [1]
-        for name in self.label_types:
-            logger.info(
-                'Number of {:s}: all :: {:d} to use: {:d}'.format(name, len(final_annots['all_' + name + '_labels']),
-                                                                  len(final_annots[name + '_labels'])))
-            numc = len(final_annots[name + '_labels'])
+        for name in self.label_types: 
+            logger.info('Number of {:s}: all :: {:d} to use: {:d}'.format(name, 
+                len(final_annots['all_'+name+'_labels']),len(self.used_labels[name+'_labels'])))
+            numc = len(self.used_labels[name+'_labels'])
             self.num_classes_list.append(numc)
             self.num_classes += numc
 
-        # self.ego_classes = final_annots['av_action_labels']
-        # self.num_ego_classes = len(self.ego_classes)
-
-        # counts = np.zeros((19, num_label_type), dtype=np.int32)
-        ##############################################
-
-        # self.label_types = ['agent', 'action', 'loc'] #
-        # print(self.label_types)
-        # print(rr)
-
-        # num_label_type = len(self.label_types)
-        # self.num_classes = 1 ## one for presence
-        # self.num_classes_list = [1]
-        # for name in self.label_types:
-        #     logger.info('Number of {:s}: all :: {:d} to use: {:d}'.format(name,
-        #         len(final_annots['all_'+name+'_labels']),len(final_annots[name+'_labels'])))
-        #     numc = len(final_annots[name+'_labels'])
-        #     self.num_classes_list.append(numc)
-        #     self.num_classes += numc
-
-        # self.ego_classes = final_annots['av_action_labels']
-        # self.num_ego_classes = len(self.ego_classes)
-
-        # counts = np.zeros((len(final_annots[self.label_types[-1] + '_labels']), num_label_type), dtype=np.int32)
-        counts = np.zeros((len(final_annots[self.label_types[0] + '_labels']) + len(final_annots[self.label_types[1] + '_labels']) +len(final_annots[self.label_types[2] + '_labels']) , num_label_type), dtype=np.int32)
+        counts = np.zeros((len(self.used_labels[self.label_types[-1] + '_labels']), num_label_type), dtype=np.int32)
+        # counts = np.zeros((len(final_annots[self.label_types[0] + '_labels']) + len(final_annots[self.label_types[1] + '_labels']) +len(final_annots[self.label_types[2] + '_labels'])  , num_label_type), dtype=np.int32)
 
 
         self.video_list = []
         self.numf_list = []
         frame_level_list = []
 
+        # vidnames = sorted(database.keys())
+        # vidnames = vidnames[:650]
+        # for videoname in vidnames:
         for videoname in sorted(database.keys()):
             if self.tiny_dataset and videoname not in self.tiny_videoset:
                 continue
@@ -679,7 +688,7 @@ class VideoDataset(tutils.data.Dataset):
                         anno = frame_annos[key]
                         box = anno['box']
                         
-                        assert box[0]<box[2] and box[1]<box[3], box
+                        assert box[0]<box[2] and box[1]<box[3], str(box)+videoname+str(frame_num)
                         assert width==1920 and height==1280, (width, height, box) # for ROAD ++
                         
                         # temp_img = cv2.rectangle(temp_img, (int(box[0]*1920),int(box[1]*1280)), (int(box[2]*1920),int(box[3]*1280)), (255,0,0), 2)
@@ -694,7 +703,7 @@ class VideoDataset(tutils.data.Dataset):
                         cc = 1
                         for idx, name in enumerate(self.label_types):
                             # print(idx,name)
-                            filtered_ids = filter_labels(anno[name+'_ids'], final_annots['all_'+name+'_labels'], final_annots[name+'_labels'])
+                            filtered_ids = filter_labels(anno[name+'_ids'], final_annots['all_'+name+'_labels'], self.used_labels[name+'_labels'])
                             list_box_labels.append(filtered_ids)
                             for fid in filtered_ids:
                                 box_labels[fid+cc] = 1
@@ -737,7 +746,7 @@ class VideoDataset(tutils.data.Dataset):
         self.frame_level_list = frame_level_list
         self.all_classes = [['agent_ness']]
         for k, name in enumerate(self.label_types):
-            labels = final_annots[name+'_labels']
+            labels = self.used_labels[name+'_labels']
             self.all_classes.append(labels)
             # self.num_classes_list.append(len(labels))
             for c, cls_ in enumerate(labels): # just to see the distribution of train and test sets
@@ -751,10 +760,13 @@ class VideoDataset(tutils.data.Dataset):
         self.num_videos = len(self.video_list)
         self.print_str = ptrstr
 
+
     def _make_lists_road(self):
 
-        self.anno_file  = os.path.join(self.root, 'road_trainval_v1.0.json')
-
+        if self.MODE == 'Train':
+            self.anno_file  = os.path.join(self.root, 'road_trainval_v1.0.json')
+        else:
+            self.anno_file  = os.path.join(self.root, 'road_test_v1.0.json')
         with open(self.anno_file,'r') as fff:
             final_annots = json.load(fff)
         
@@ -766,25 +778,27 @@ class VideoDataset(tutils.data.Dataset):
         num_label_type = len(self.label_types)  # 5
         self.num_classes = 1  ## one for presence
         self.num_classes_list = [1]
-        for name in self.label_types:
-            logger.info(
-                'Number of {:s}: all :: {:d} to use: {:d}'.format(name, len(final_annots['all_' + name + '_labels']),
-                                                                  len(final_annots[name + '_labels'])))
-            numc = len(final_annots[name + '_labels'])
+        for name in self.label_types: 
+            logger.info('Number of {:s}: all :: {:d} to use: {:d}'.format(name, 
+                len(final_annots['all_'+name+'_labels']),len(self.used_labels[name+'_labels'])))
+            numc = len(self.used_labels[name+'_labels'])
             self.num_classes_list.append(numc)
             self.num_classes += numc
+        counts = np.zeros((len(self.used_labels[self.label_types[-1] + '_labels']), num_label_type), dtype=np.int32)
 
         # self.ego_classes = final_annots['av_action_labels']
         # self.num_ego_classes = len(self.ego_classes)
 
         # counts = np.zeros((len(final_annots[self.label_types[-1] + '_labels']), num_label_type), dtype=np.int32)
-        counts = np.zeros((19, num_label_type), dtype=np.int32)
         ##############################################
 
         self.video_list = []
         self.numf_list = []
         frame_level_list = []
-
+        
+        # vidnames = sorted(database.keys())
+        # vidnames = vidnames[:2]
+        # for videoname in vidnames:
         for videoname in sorted(database.keys()):
             if not is_part_of_subsets(final_annots['db'][videoname]['split_ids'], self.SUBSETS):
                 continue
@@ -830,7 +844,7 @@ class VideoDataset(tutils.data.Dataset):
                         list_box_labels = []
                         cc = 1
                         for idx, name in enumerate(self.label_types):
-                            filtered_ids = filter_labels(anno[name+'_ids'], final_annots['all_'+name+'_labels'], final_annots[name+'_labels'])
+                            filtered_ids = filter_labels(anno[name+'_ids'], final_annots['all_'+name+'_labels'], self.used_labels[name+'_labels'])
                             list_box_labels.append(filtered_ids)
                             for fid in filtered_ids:
                                 box_labels[fid+cc] = 1
@@ -872,7 +886,7 @@ class VideoDataset(tutils.data.Dataset):
         self.frame_level_list = frame_level_list
         self.all_classes = [['agent_ness']]
         for k, name in enumerate(self.label_types):
-            labels = final_annots[name+'_labels']
+            labels = self.used_labels[name+'_labels']
             self.all_classes.append(labels)
             # self.num_classes_list.append(len(labels))
             for c, cls_ in enumerate(labels): # just to see the distribution of train and test sets
@@ -981,7 +995,7 @@ def custum_collate(batch):
             temp_counts.append(bs.shape[0])
         assert seq_len == len(temp_counts)
         counts.append(temp_counts)
-    counts = np.asarray(counts, dtype=np.int)
+    counts = np.asarray(counts, dtype=np.int_)
     new_boxes = torch.zeros(len(boxes), seq_len, max_len, 4)
     new_targets = torch.zeros([len(boxes), seq_len, max_len, num_classes])
     for c1, bs_ in enumerate(boxes):

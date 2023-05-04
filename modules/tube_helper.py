@@ -265,7 +265,6 @@ def bbox_overlaps(box_a, box_b):
             ious[b] = inter[b]/union
     return ious
 
-
 def get_tube_3Diou(tube_a, tube_b , metric_type='stiou'):
     """Compute the spatio-temporal IoU between two tubes"""
 
@@ -276,12 +275,15 @@ def get_tube_3Diou(tube_a, tube_b , metric_type='stiou'):
     
     if tmax < tmin: return 0.0
 
+
     temporal_inter = tmax - tmin + 1
     temporal_union = max(tube_a['frames'][-1], tube_b['frames'][-1]) - min(tube_a['frames'][0], tube_b['frames'][0]) + 1
     tiou = temporal_inter / temporal_union
     if metric_type == 'tiou':
         return tiou
     # try:
+    if not tmin in tube_b['frames'] or not tmax in tube_b['frames']:
+        return 0.0
 
     tube_a_boxes = tube_a['boxes'][int(np.where(tube_a['frames'] == tmin)[0][0]): int(
         np.where(tube_a['frames'] == tmax)[0][0]) + 1, :]
@@ -289,6 +291,8 @@ def get_tube_3Diou(tube_a, tube_b , metric_type='stiou'):
         np.where(tube_b['frames'] == tmax)[0][0]) + 1, :]
     # except:
     #     pdb.set_trace()     print('something', tube_a_boxes, tube_b_boxes, iou)
+    if tube_a_boxes.shape[0] > tube_b_boxes.shape[0]:
+        tube_a_boxes = tube_a_boxes[:tube_b_boxes.shape[0],:]
 
     siou = iou3d(tube_a_boxes, tube_b_boxes)
 

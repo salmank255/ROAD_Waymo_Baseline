@@ -256,13 +256,13 @@ def get_gt_tubes(final_annots, subset, label_type, dataset):
     video_list = []
     tubes = {}
     for videoname in final_annots['db']:
-        if dataset == 'road' or dataset == 'roadpp':
+        if dataset == 'road' or dataset == 'roadpp' or dataset== 'road_waymo':
             cond = is_part_of_subsets(final_annots['db'][videoname]['split_ids'], [subset])
         else:
             cond = videoname not in final_annots['trainvideos']
         if cond:
             video_list.append(videoname)
-            if dataset == 'road' or dataset == 'roadpp':
+            if dataset == 'road' or dataset == 'roadpp' or dataset=='road_waymo':
                 tubes[videoname] = get_filtered_tubes(
                     label_type+'_tubes', final_annots, videoname)
             else:
@@ -354,8 +354,15 @@ def evaluate_tubes(anno_file, det_file,  subset='val_3', dataset='road', iou_thr
     logger.info('Evaluating tubes for datasets '+ dataset)
     logger.info('GT FILE:: '+ anno_file)
     logger.info('Result File:: '+ det_file)
+    used_labels = {"agent_labels": ["Ped", "Car", "Cyc", "Mobike", "SmalVeh", "MedVeh", "LarVeh", "Bus", "EmVeh", "TL"],
+                       "action_labels": ["Red", "Amber", "Green", "MovAway", "MovTow", "Mov", "Rev", "Brake", "Stop", "IncatLft", "IncatRht", "HazLit", "TurLft", "TurRht", "MovRht", "MovLft", "Ovtak", "Wait2X", "XingFmLft", "XingFmRht", "Xing", "PushObj"],
+                       "loc_labels": ["VehLane", "OutgoLane", "OutgoCycLane", "OutgoBusLane", "IncomLane", "IncomCycLane", "IncomBusLane", "Pav", "LftPav", "RhtPav", "Jun", "xing", "BusStop", "parking", "LftParking", "rightParking"],
+                       "duplex_labels": ["Ped-MovAway", "Ped-MovTow", "Ped-Mov", "Ped-Stop", "Ped-Wait2X", "Ped-XingFmLft", "Ped-XingFmRht", "Ped-Xing", "Ped-PushObj", "Car-MovAway", "Car-MovTow", "Car-Brake", "Car-Stop", "Car-IncatLft", "Car-IncatRht", "Car-HazLit", "Car-TurLft", "Car-TurRht", "Car-MovRht", "Car-MovLft", "Car-XingFmLft", "Car-XingFmRht", "Cyc-MovAway", "Cyc-MovTow", "Cyc-Stop", "Mobike-Stop", "MedVeh-MovAway", "MedVeh-MovTow", "MedVeh-Brake", "MedVeh-Stop", "MedVeh-IncatLft", "MedVeh-IncatRht", "MedVeh-HazLit", "MedVeh-TurRht", "MedVeh-XingFmLft", "MedVeh-XingFmRht", "LarVeh-MovAway", "LarVeh-MovTow", "LarVeh-Stop", "LarVeh-HazLit", "Bus-MovAway", "Bus-MovTow", "Bus-Brake", "Bus-Stop", "Bus-HazLit", "EmVeh-Stop", "TL-Red", "TL-Amber", "TL-Green"], 
+                       "triplet_labels": ["Ped-MovAway-LftPav", "Ped-MovAway-RhtPav", "Ped-MovAway-Jun", "Ped-MovTow-LftPav", "Ped-MovTow-RhtPav", "Ped-MovTow-Jun", "Ped-Mov-OutgoLane", "Ped-Mov-Pav", "Ped-Mov-RhtPav", "Ped-Stop-OutgoLane", "Ped-Stop-Pav", "Ped-Stop-LftPav", "Ped-Stop-RhtPav", "Ped-Stop-BusStop", "Ped-Wait2X-RhtPav", "Ped-Wait2X-Jun", "Ped-XingFmLft-Jun", "Ped-XingFmRht-Jun", "Ped-XingFmRht-xing", "Ped-Xing-Jun", "Ped-PushObj-LftPav", "Ped-PushObj-RhtPav", "Car-MovAway-VehLane", "Car-MovAway-OutgoLane", "Car-MovAway-Jun", "Car-MovTow-VehLane", "Car-MovTow-IncomLane", "Car-MovTow-Jun", "Car-Brake-VehLane", "Car-Brake-OutgoLane", "Car-Brake-Jun", "Car-Stop-VehLane", "Car-Stop-OutgoLane", "Car-Stop-IncomLane", "Car-Stop-Jun", "Car-Stop-parking", "Car-IncatLft-VehLane", "Car-IncatLft-OutgoLane", "Car-IncatLft-IncomLane", "Car-IncatLft-Jun", "Car-IncatRht-VehLane", "Car-IncatRht-OutgoLane", "Car-IncatRht-IncomLane", "Car-IncatRht-Jun", "Car-HazLit-IncomLane", "Car-TurLft-VehLane", "Car-TurLft-Jun", "Car-TurRht-Jun", "Car-MovRht-OutgoLane", "Car-MovLft-VehLane", "Car-MovLft-OutgoLane", "Car-XingFmLft-Jun", "Car-XingFmRht-Jun", "Cyc-MovAway-OutgoCycLane", "Cyc-MovAway-RhtPav", "Cyc-MovTow-IncomLane", "Cyc-MovTow-RhtPav", "MedVeh-MovAway-VehLane", "MedVeh-MovAway-OutgoLane", "MedVeh-MovAway-Jun", "MedVeh-MovTow-IncomLane", "MedVeh-MovTow-Jun", "MedVeh-Brake-VehLane", "MedVeh-Brake-OutgoLane", "MedVeh-Brake-Jun", "MedVeh-Stop-VehLane", "MedVeh-Stop-OutgoLane", "MedVeh-Stop-IncomLane", "MedVeh-Stop-Jun", "MedVeh-Stop-parking", "MedVeh-IncatLft-IncomLane", "MedVeh-IncatRht-Jun", "MedVeh-TurRht-Jun", "MedVeh-XingFmLft-Jun", "MedVeh-XingFmRht-Jun", "LarVeh-MovAway-VehLane", "LarVeh-MovTow-IncomLane", "LarVeh-Stop-VehLane", "LarVeh-Stop-Jun", "Bus-MovAway-OutgoLane", "Bus-MovTow-IncomLane", "Bus-Stop-VehLane", "Bus-Stop-OutgoLane", "Bus-Stop-IncomLane", "Bus-Stop-Jun", "Bus-HazLit-OutgoLane"]}
 
-    if dataset == 'road' or dataset == 'roadpp':
+
+
+    if dataset == 'road' or dataset == 'roadpp' or dataset=='road_waymo':
         with open(anno_file, 'r') as fff:
             final_annots = json.load(fff)
     else:
@@ -365,7 +372,7 @@ def evaluate_tubes(anno_file, det_file,  subset='val_3', dataset='road', iou_thr
     with open(det_file, 'rb') as fff:
         detections = pickle.load(fff)
 
-    if dataset == 'road' or dataset =='roadpp':
+    if dataset == 'road' or dataset =='roadpp' or dataset=='road_waymo':
         label_types = final_annots['label_types']
     else:
         label_types = ['action']
@@ -373,10 +380,10 @@ def evaluate_tubes(anno_file, det_file,  subset='val_3', dataset='road', iou_thr
     results = {} 
     for _, label_type in enumerate(label_types):
 
-        if dataset != 'road' or dataset != 'roadpp':
+        if dataset != 'road' and dataset != 'roadpp' and dataset!= 'road_waymo' :
             classes = final_annots['classes']
         else:
-            classes = final_annots[label_type+'_labels']
+            classes = used_labels[label_type+'_labels']
 
         logger.info('Evaluating {} {}'.format(label_type, len(classes)))
         ap_all = []
@@ -491,7 +498,7 @@ def get_gt_frames_ava(final_annots, label_type, wh):
 def get_gt_frames(final_annots, subsets, label_type, dataset, wh):
     """Get video list form ground truth videos used in subset 
     and their ground truth frames """
-    if dataset == 'road' or dataset=='roadpp':
+    if dataset == 'road' or dataset=='roadpp' or dataset=='road_waymo':
         # video_list = []
         frames = {}
         if not isinstance(subsets, list):
@@ -592,21 +599,25 @@ def eval_framewise_ego_actions_ucf24(final_annots, detections, subsets):
 
 
 def eval_framewise_ego_actions(final_annots, detections, subsets, dataset='road'):
-    if dataset == 'road' or dataset == 'roadpp':
+    if dataset == 'road' or dataset == 'roadpp' or dataset == 'road_waymo':
         return eval_framewise_ego_actions_road(final_annots, detections, subsets)
     else:
         return eval_framewise_ego_actions_ucf24(final_annots, detections, subsets)
 
 
 def evaluate_frames(anno_file, det_file, subset, wh, iou_thresh=0.5, dataset='road'):
-    
+    used_labels = {"agent_labels": ["Ped", "Car", "Cyc", "Mobike", "SmalVeh", "MedVeh", "LarVeh", "Bus", "EmVeh", "TL"],
+                       "action_labels": ["Red", "Amber", "Green", "MovAway", "MovTow", "Mov", "Rev", "Brake", "Stop", "IncatLft", "IncatRht", "HazLit", "TurLft", "TurRht", "MovRht", "MovLft", "Ovtak", "Wait2X", "XingFmLft", "XingFmRht", "Xing", "PushObj"],
+                       "loc_labels": ["VehLane", "OutgoLane", "OutgoCycLane", "OutgoBusLane", "IncomLane", "IncomCycLane", "IncomBusLane", "Pav", "LftPav", "RhtPav", "Jun", "xing", "BusStop", "parking", "LftParking", "rightParking"],
+                       "duplex_labels": ["Ped-MovAway", "Ped-MovTow", "Ped-Mov", "Ped-Stop", "Ped-Wait2X", "Ped-XingFmLft", "Ped-XingFmRht", "Ped-Xing", "Ped-PushObj", "Car-MovAway", "Car-MovTow", "Car-Brake", "Car-Stop", "Car-IncatLft", "Car-IncatRht", "Car-HazLit", "Car-TurLft", "Car-TurRht", "Car-MovRht", "Car-MovLft", "Car-XingFmLft", "Car-XingFmRht", "Cyc-MovAway", "Cyc-MovTow", "Cyc-Stop", "Mobike-Stop", "MedVeh-MovAway", "MedVeh-MovTow", "MedVeh-Brake", "MedVeh-Stop", "MedVeh-IncatLft", "MedVeh-IncatRht", "MedVeh-HazLit", "MedVeh-TurRht", "MedVeh-XingFmLft", "MedVeh-XingFmRht", "LarVeh-MovAway", "LarVeh-MovTow", "LarVeh-Stop", "LarVeh-HazLit", "Bus-MovAway", "Bus-MovTow", "Bus-Brake", "Bus-Stop", "Bus-HazLit", "EmVeh-Stop", "TL-Red", "TL-Amber", "TL-Green"], 
+                       "triplet_labels": ["Ped-MovAway-LftPav", "Ped-MovAway-RhtPav", "Ped-MovAway-Jun", "Ped-MovTow-LftPav", "Ped-MovTow-RhtPav", "Ped-MovTow-Jun", "Ped-Mov-OutgoLane", "Ped-Mov-Pav", "Ped-Mov-RhtPav", "Ped-Stop-OutgoLane", "Ped-Stop-Pav", "Ped-Stop-LftPav", "Ped-Stop-RhtPav", "Ped-Stop-BusStop", "Ped-Wait2X-RhtPav", "Ped-Wait2X-Jun", "Ped-XingFmLft-Jun", "Ped-XingFmRht-Jun", "Ped-XingFmRht-xing", "Ped-Xing-Jun", "Ped-PushObj-LftPav", "Ped-PushObj-RhtPav", "Car-MovAway-VehLane", "Car-MovAway-OutgoLane", "Car-MovAway-Jun", "Car-MovTow-VehLane", "Car-MovTow-IncomLane", "Car-MovTow-Jun", "Car-Brake-VehLane", "Car-Brake-OutgoLane", "Car-Brake-Jun", "Car-Stop-VehLane", "Car-Stop-OutgoLane", "Car-Stop-IncomLane", "Car-Stop-Jun", "Car-Stop-parking", "Car-IncatLft-VehLane", "Car-IncatLft-OutgoLane", "Car-IncatLft-IncomLane", "Car-IncatLft-Jun", "Car-IncatRht-VehLane", "Car-IncatRht-OutgoLane", "Car-IncatRht-IncomLane", "Car-IncatRht-Jun", "Car-HazLit-IncomLane", "Car-TurLft-VehLane", "Car-TurLft-Jun", "Car-TurRht-Jun", "Car-MovRht-OutgoLane", "Car-MovLft-VehLane", "Car-MovLft-OutgoLane", "Car-XingFmLft-Jun", "Car-XingFmRht-Jun", "Cyc-MovAway-OutgoCycLane", "Cyc-MovAway-RhtPav", "Cyc-MovTow-IncomLane", "Cyc-MovTow-RhtPav", "MedVeh-MovAway-VehLane", "MedVeh-MovAway-OutgoLane", "MedVeh-MovAway-Jun", "MedVeh-MovTow-IncomLane", "MedVeh-MovTow-Jun", "MedVeh-Brake-VehLane", "MedVeh-Brake-OutgoLane", "MedVeh-Brake-Jun", "MedVeh-Stop-VehLane", "MedVeh-Stop-OutgoLane", "MedVeh-Stop-IncomLane", "MedVeh-Stop-Jun", "MedVeh-Stop-parking", "MedVeh-IncatLft-IncomLane", "MedVeh-IncatRht-Jun", "MedVeh-TurRht-Jun", "MedVeh-XingFmLft-Jun", "MedVeh-XingFmRht-Jun", "LarVeh-MovAway-VehLane", "LarVeh-MovTow-IncomLane", "LarVeh-Stop-VehLane", "LarVeh-Stop-Jun", "Bus-MovAway-OutgoLane", "Bus-MovTow-IncomLane", "Bus-Stop-VehLane", "Bus-Stop-OutgoLane", "Bus-Stop-IncomLane", "Bus-Stop-Jun", "Bus-HazLit-OutgoLane"]}
 
     logger.info('Evaluating frames for datasets '+ dataset)
     t0 = time.perf_counter()
     if dataset == 'road':
         with open(anno_file, 'r') as fff:
             final_annots = json.load(fff)
-    if dataset == 'roadpp':
+    if dataset == 'roadpp' or dataset == 'road_waymo':
         with open(anno_file, 'r') as fff:
             final_annots = json.load(fff)
     elif dataset == 'ucf24':
@@ -621,7 +632,8 @@ def evaluate_frames(anno_file, det_file, subset, wh, iou_thresh=0.5, dataset='ro
         detections = pickle.load(fff)
 
     results = {}
-    if dataset == 'road' or dataset == 'roadpp':
+    
+    if dataset == 'road' or dataset == 'roadpp' or dataset == 'road_waymo:
         label_types = ['agent_ness', 'agent', 'action', 'loc']
     elif dataset == 'ucf24':
         label_types = ['frame_actions', 'action_ness', 'action']
@@ -634,6 +646,8 @@ def evaluate_frames(anno_file, det_file, subset, wh, iou_thresh=0.5, dataset='ro
     logger.info('Time taken to load for evaluation {}'.format(t1-t0))
     for nlt, label_type in enumerate(label_types):
         if label_type in ['av_actions', 'frame_actions']:
+            # Skip for ego actions
+            continue
             mAP, ap_all, ap_strs = eval_framewise_ego_actions(final_annots, detections[label_type], subset, dataset)
             re_all = [1.0 for _ in range(len(ap_all))]
             for apstr in ap_strs:
@@ -653,10 +667,10 @@ def evaluate_frames(anno_file, det_file, subset, wh, iou_thresh=0.5, dataset='ro
                 classes = ['action_ness']
             elif dataset == 'ava':
                 classes = class_names_ava
-            elif dataset != 'road' and dataset != 'roadpp':
+            elif dataset != 'road' and dataset != 'roadpp' and dataset != 'road_waymo':
                 classes = final_annots['classes'] ## valid for ucf24
             else:
-                classes = final_annots[label_type+'_labels']
+                classes = used_labels[label_type+'_labels']
             
             for cl_id, class_name in enumerate(classes):
                 t1 = time.perf_counter()
