@@ -21,7 +21,7 @@ import pdb
 import math
 import torch.nn as nn
 import modules.utils as utils
-from pytorch_revgrad import RevGrad # for domain adaptation
+# from pytorch_revgrad import RevGrad # for domain adaptation
 
 logger = utils.get_logger(__name__)
 

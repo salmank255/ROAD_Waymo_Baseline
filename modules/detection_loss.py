@@ -67,7 +67,7 @@ class FocalLoss(nn.Module):
         self.domain_loss_fn = nn.BCEWithLogitsLoss() # nn.BCELoss # nn.CrossEntropyLoss()
 
     # def forward(self, confidence, predicted_locations, gt_boxes, gt_labels, counts, anchors, ego_preds, ego_labels, logic, Cplus, Cminus):
-    def forward(self, confidence, predicted_locations, gt_boxes, gt_labels, counts, anchors, domain_preds=None, domain_labels=None, logic, Cplus, Cminus):
+    def forward(self, confidence, predicted_locations, gt_boxes, gt_labels, counts, anchors, domain_preds, domain_labels, logic, Cplus, Cminus):
         ## gt_boxes, gt_labels, counts, ancohor_boxes
         
         """

@@ -633,7 +633,7 @@ def evaluate_frames(anno_file, det_file, subset, wh, iou_thresh=0.5, dataset='ro
 
     results = {}
     
-    if dataset == 'road' or dataset == 'roadpp' or dataset == 'road_waymo:
+    if dataset == 'road' or dataset == 'roadpp' or dataset == 'road_waymo':
         label_types = ['agent_ness', 'agent', 'action', 'loc']
     elif dataset == 'ucf24':
         label_types = ['frame_actions', 'action_ness', 'action']
