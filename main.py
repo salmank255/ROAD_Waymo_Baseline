@@ -67,7 +67,7 @@ def main():
     parser.add_argument('--TEST_SUBSETS', default='', 
                         type=str,help='Testing SUBSETS seprated by ,')
     # Input size of image only 600 is supprted at the moment 
-    parser.add_argument('--MIN_SIZE', default=960, 
+    parser.add_argument('--MIN_SIZE', default=600, 
                         type=int, help='Input Size for FPN')
     parser.add_argument('--MAX_SIZE', default=1280, 
                         type=int, help='Input Size for FPN')

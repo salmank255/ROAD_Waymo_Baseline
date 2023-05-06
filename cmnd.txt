@@ -64,5 +64,9 @@ CUDA_VISIBLE_DEVICES=0,1,2 python main.py ../road-dataset/ ../DA_exp/ kinetics-p
 
 
 
-CUDA_VISIBLE_DEVICES=2 python main.py ../ ../ kinetics-pt/ --MODE=gen_dets --ARCH=resnet50 --MODEL_TYPE=I3D --DATASET=roadpp --TEST_DATASET=road_waymo --TRAIN_SUBSETS=train --TEST_SEQ_LEN=8 --TEST_SUBSETS=test --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=8 --LR=0.0031 --MIN_SIZE=600
+CUDA_VISIBLE_DEVICES=2 python main.py ../ ../ kinetics-pt/ --MODE=gen_dets --ARCH=resnet50 --MODEL_TYPE=I3D --DATASET=roadpp --TEST_DATASET=road --TRAIN_SUBSETS=train --TEST_SEQ_LEN=8 --TEST_SUBSETS=test --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=8 --LR=0.0031 --MIN_SIZE=600
 CUDA_VISIBLE_DEVICES=2 python main.py ../ ../ kinetics-pt/ --MODE=gen_dets --ARCH=resnet50 --MODEL_TYPE=I3D --DATASET=roadpp --TEST_DATASET=road_waymo --TRAIN_SUBSETS=train --TEST_SEQ_LEN=8 --TEST_SUBSETS=val --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=8 --LR=0.0031 --MIN_SIZE=600
+
+
+CUDA_VISIBLE_DEVICES=0,1 python main.py ../ ../ kinetics-pt/ --MODE=train --ARCH=resnet50 --MODEL_TYPE=I3D --DATASET=road_waymo --TEST_DATASET=road_waymo --TRAIN_SUBSETS=train --VAL_SUBSETS=val --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=8 --LR=0.0041 --MIN_SIZE=600
+CUDA_VISIBLE_DEVICES=2 python main.py ../ ../ kinetics-pt/ --MODE=gen_dets --ARCH=resnet50 --MODEL_TYPE=I3D --DATASET=road_waymo --TEST_DATASET=road --TRAIN_SUBSETS=train --VAL_SUBSETS=test --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=8 --LR=0.0041 --MIN_SIZE=600
