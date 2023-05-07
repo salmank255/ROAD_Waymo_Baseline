@@ -11,10 +11,13 @@ import pdb
 import pickle
 import numpy as np
 import scipy.io as io  # to save detection as mat files
+from mergedeep import merge # merging jsons
+
 from data.datasets import is_part_of_subsets, get_filtered_tubes, get_filtered_frames, filter_labels, read_ava_annotations
 from data.datasets import get_frame_level_annos_ucf24, get_filtered_tubes_ucf24, read_labelmap
 from modules.tube_helper import get_tube_3Diou, make_det_tube
 from modules import utils
+
 
 logger = utils.get_logger(__name__)
 
@@ -614,12 +617,20 @@ def evaluate_frames(anno_file, det_file, subset, wh, iou_thresh=0.5, dataset='ro
 
     logger.info('Evaluating frames for datasets '+ dataset)
     t0 = time.perf_counter()
-    if dataset == 'road':
+    if dataset == 'road' or dataset == 'road_waymo':
         with open(anno_file, 'r') as fff:
             final_annots = json.load(fff)
-    if dataset == 'roadpp' or dataset == 'road_waymo':
-        with open(anno_file, 'r') as fff:
-            final_annots = json.load(fff)
+    
+    elif dataset == 'roadpp':
+        with open(anno_file[0], 'r') as fff:
+            final_annots1 = json.load(fff)
+        with open(anno_file[1], 'r') as fff:
+            final_annots2 = json.load(fff)
+
+        final_annots = merge(final_annots1, final_annots2) 
+
+   
+   
     elif dataset == 'ucf24':
         with open(anno_file, 'rb') as fff:
             final_annots = pickle.load(fff)

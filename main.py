@@ -10,8 +10,8 @@ from data import VideoDataset
 from torchvision import transforms
 import data.transforms as vtf
 from models.retinanet import build_retinanet
-from gen_dets import gen_dets, eval_framewise_dets
-from tubes import build_eval_tubes
+from gen_dets import gen_dets,gen_dets_roadpp, eval_framewise_dets,eval_framewise_dets_roadpp
+from tubes import build_eval_tubes,build_eval_tubes_roadpp
 from val import val
 
 def str2bool(v):
@@ -270,6 +270,7 @@ def main():
         val_dataset.video_list = road_val_dataset.video_list + road_waymo_val_dataset.video_list
         val_dataset.ids = road_val_dataset.ids + road_waymo_val_dataset.ids
         val_dataset.numf_list = road_val_dataset.numf_list + road_waymo_val_dataset.numf_list
+        val_dataset.anno_file = [road_val_dataset.anno_file, road_waymo_val_dataset.anno_file]
 
         logger.info('Done Loading ROAD Plus Plus (combined) Validation Dataset')
        
@@ -323,13 +324,24 @@ def main():
     elif args.MODE == 'val':
         val(args, net, val_dataset)
     elif args.MODE == 'gen_dets':
-        gen_dets(args, net, val_dataset)
-        eval_framewise_dets(args, val_dataset)
-        build_eval_tubes(args, val_dataset)
+        if args.TEST_DATASET == 'roadpp':
+            gen_dets_roadpp(args, net, road_val_dataset,road_waymo_val_dataset)
+            eval_framewise_dets_roadpp(args,road_val_dataset,road_waymo_val_dataset)
+            build_eval_tubes_roadpp(args,road_val_dataset,road_waymo_val_dataset)
+        else:
+            gen_dets(args, net, val_dataset)
+            eval_framewise_dets(args, val_dataset)
+            build_eval_tubes(args, val_dataset)
     elif args.MODE == 'eval_frames':
-        eval_framewise_dets(args, val_dataset)
+        if args.TEST_DATASET == 'roadpp':
+            eval_framewise_dets_roadpp(args,road_val_dataset,road_waymo_val_dataset)
+        else:
+            eval_framewise_dets(args, val_dataset)
     elif args.MODE == 'eval_tubes':
-        build_eval_tubes(args, val_dataset)
+        if args.TEST_DATASET == 'roadpp':
+            build_eval_tubes_roadpp(args,road_val_dataset,road_waymo_val_dataset)
+        else:
+            build_eval_tubes(args, val_dataset)
     
 
 if __name__ == "__main__":
