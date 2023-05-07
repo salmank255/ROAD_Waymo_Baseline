@@ -134,24 +134,24 @@ def gen_dets_roadpp(args, net, val_road_dataset,val_road_waymo_dataset):
             mAP_ls.append(mAP)
             ap_strs_ls.append(ap_strs)
 
-            label_types = [args.label_types[0]] + ['ego_action']
-            for nlt in range(len(label_types)):
-                for ap_str in ap_strs_ls[nlt][0]:
-                    logger.info(ap_str)
-                for ap_str in ap_strs_ls[nlt][1]:
-                    logger.info(ap_str)
+    label_types = [args.label_types[0]] + ['ego_action']
+    for nlt in range(len(label_types)):
+        for ap_str in ap_strs_ls[nlt][0]:
+            logger.info(ap_str)
+        for ap_str in ap_strs_ls[nlt][1]:
+            logger.info(ap_str)
 
-            ptr_str_road = '\n{:s} ROAD MEANAP:::=> {:0.5f}'.format(label_types[nlt], mAP_ls[nlt][0])
-            ptr_str_road_waymo = '\n{:s} ROAD Waymo MEANAP:::=> {:0.5f}'.format(label_types[nlt], mAP_ls[nlt][1])
-            ptr_str_roadpp = '\n{:s} ROADPP MEANAP:::=> {:0.5f}'.format(label_types[nlt], np.mean([mAP_ls[nlt][0],mAP_ls[nlt][1]]))
-            
-            logger.info(ptr_str_road)
-            logger.info(ptr_str_road_waymo)
-            logger.info(ptr_str_roadpp)
+    ptr_str_road = '\n{:s} ROAD MEANAP:::=> {:0.5f}'.format(label_types[nlt], mAP_ls[nlt][0])
+    ptr_str_road_waymo = '\n{:s} ROAD Waymo MEANAP:::=> {:0.5f}'.format(label_types[nlt], mAP_ls[nlt][1])
+    ptr_str_roadpp = '\n{:s} ROADPP MEANAP:::=> {:0.5f}'.format(label_types[nlt], np.mean([mAP_ls[nlt][0],mAP_ls[nlt][1]]))
+    
+    logger.info(ptr_str_road)
+    logger.info(ptr_str_road_waymo)
+    logger.info(ptr_str_roadpp)
 
 
-            torch.cuda.synchronize()
-            logger.info('Complete set time {:0.2f}'.format(time.perf_counter() - tt0))
+    torch.cuda.synchronize()
+    logger.info('Complete set time {:0.2f}'.format(time.perf_counter() - tt0))
 
 
 
@@ -450,6 +450,9 @@ def eval_framewise_dets_roadpp(args, val_road_dataset,val_road_waymo_dataset):
                     rstr = '\n\nResults for ' + name1 + '\n'
                     logger.info(rstr)
                     log_file.write(rstr+'\n')
+                    log_file.write('ROADPP '+ subset + ' & ' + label_type + str(np.mean([sresults_ls[label_type]['mAP'][0],sresults_ls[label_type]['mAP'][1]])))                    
+                    log_file.write(rstr+'\n')
+                    results['ROADPP '+ subset + ' & ' + label_type] = {'mAP': np.mean([sresults_ls[label_type]['mAP'][0],sresults_ls[label_type]['mAP'][1]])}
                     results[name1] = {'mAP': sresults_ls[label_type]['mAP'][0], 'APs': sresults_ls[label_type]['ap_all'][0]}
                     for ap_str in sresults_ls[label_type]['ap_strs'][0]:
                         logger.info(ap_str)
