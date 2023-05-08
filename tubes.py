@@ -2,7 +2,7 @@
 """ 
  Build tubes and evaluate
 """
-
+from mergedeep import merge # merging jsons
 import os
 import time, json
 import datetime
@@ -139,7 +139,7 @@ def build_eval_tubes_roadpp(args, val_road_dataset,val_road_waymo_dataset):
         
         
         road_paths = perform_building(args, val_road_dataset.video_list, epoch)
-        road_waymo_paths = perform_building(args, val_road_dataset.video_list, epoch)
+        road_waymo_paths = perform_building(args, val_road_waymo_dataset.video_list, epoch)
         
         childs_road = []
         childs_road_waymo = []
@@ -148,9 +148,13 @@ def build_eval_tubes_roadpp(args, val_road_dataset,val_road_waymo_dataset):
             childs_road_waymo = val_road_waymo_dataset.childs
             
 
-        make_tubes(args, paths, val_road_dataset.video_list, childs_road, tube_file)
-        make_tubes(args, paths, val_road_waymo_dataset.video_list, childs_road_waymo, tube_file)
+        detection_tubes_road = make_tubes_roadpp(args, road_paths, val_road_dataset.video_list, childs_road, tube_file)
+        detection_tubes_road_waymo = make_tubes_roadpp(args, road_waymo_paths, val_road_waymo_dataset.video_list, childs_road_waymo, tube_file)
 
+        detection_tubes = merge(detection_tubes_road, detection_tubes_road_waymo) 
+
+        with open(tube_file, 'wb') as f:
+            pickle.dump(detection_tubes, f)
 
         # torch.cuda.synchronize()
         logger.info('Computation time {:0.2f}'.format(time.perf_counter() - tt0))
@@ -178,20 +182,18 @@ def build_eval_tubes_roadpp(args, val_road_dataset,val_road_waymo_dataset):
                         sresults_ls.append(sresults)
 
                     for _, label_type in enumerate(args.label_types[1:]):
-                        log_file.write(rstr+'\n')
-                        log_file.write('ROADPP '+ subset + ' & ' + label_type + str(np.mean([sresults_ls[label_type]['mAP'][0],sresults_ls[label_type]['mAP'][1]])))                    
-                        log_file.write(rstr+'\n')
-                        results['ROADPP '+ subset + ' & ' + label_type] = {'mAP': np.mean([sresults_ls[label_type]['mAP'][0],sresults_ls[label_type]['mAP'][1]])}
+                        log_file.write('ROADPP '+ subset + ' & ' + label_type + str(np.mean([sresults_ls[0][label_type]['mAP'],sresults_ls[1][label_type]['mAP']])))                    
+                        results['ROADPP '+ subset + ' & ' + label_type] = {'mAP': np.mean([sresults_ls[0][label_type]['mAP'],sresults_ls[1][label_type]['mAP']])}
                         name = 'ROAD ' + subset + ' & ' + label_type
                         rstr = '\n\nResults for {:s} @ {:0.02f} {:s}\n'.format(name, TUBES_EVAL_THRESH, metric_type)
                         logger.info(rstr)
                         log_file.write(rstr+'\n')
-                        results[name] = {'mAP': sresults_ls[label_type]['mAP'][0], 'APs': sresults_ls[label_type]['ap_all'][0],
-                                        'mR':sresults_ls[label_type]['mR'][0], 'Recalls': sresults_ls[label_type]['recalls'][0],
-                                        'ap_strs': sresults_ls[label_type]['ap_strs'][0]}
-                        map_line[mcount] += '{:0.1f}/{:0.01f}|'.format(sresults_ls[label_type]['mAP'][0],sresults_ls[label_type]['mR'][0])
+                        results[name] = {'mAP': sresults_ls[0][label_type]['mAP'], 'APs': sresults_ls[0][label_type]['ap_all'],
+                                        'mR':sresults_ls[0][label_type]['mR'], 'Recalls': sresults_ls[0][label_type]['recalls'],
+                                        'ap_strs': sresults_ls[0][label_type]['ap_strs']}
+                        map_line[mcount] += '{:0.1f}/{:0.01f}|'.format(sresults_ls[0][label_type]['mAP'],sresults_ls[0][label_type]['mR'])
                         mcount += 1
-                        for ap_str in sresults_ls[label_type]['ap_strs'][0]:
+                        for ap_str in sresults_ls[0][label_type]['ap_strs']:
                             logger.info(ap_str)
                             log_file.write(ap_str+'\n')
 
@@ -199,12 +201,12 @@ def build_eval_tubes_roadpp(args, val_road_dataset,val_road_waymo_dataset):
                         rstr = '\n\nResults for {:s} @ {:0.02f} {:s}\n'.format(name, TUBES_EVAL_THRESH, metric_type)
                         logger.info(rstr)
                         log_file.write(rstr+'\n')
-                        results[name] = {'mAP': sresults_ls[label_type]['mAP'][1], 'APs': sresults_ls[label_type]['ap_all'][1],
-                                        'mR':sresults_ls[label_type]['mR'][1], 'Recalls': sresults_ls[label_type]['recalls'][1],
-                                        'ap_strs': sresults_ls[label_type]['ap_strs'][1]}
-                        map_line[mcount] += '{:0.1f}/{:0.01f}|'.format(sresults_ls[label_type]['mAP'][1],sresults_ls[label_type]['mR'][1])
+                        results[name] = {'mAP': sresults_ls[1][label_type]['mAP'], 'APs': sresults_ls[1][label_type]['ap_all'],
+                                        'mR':sresults_ls[1][label_type]['mR'], 'Recalls': sresults_ls[1][label_type]['recalls'],
+                                        'ap_strs': sresults_ls[1][label_type]['ap_strs']}
+                        map_line[mcount] += '{:0.1f}/{:0.01f}|'.format(sresults_ls[1][label_type]['mAP'],sresults_ls[1][label_type]['mR'])
                         mcount += 1
-                        for ap_str in sresults_ls[label_type]['ap_strs'][1]:
+                        for ap_str in sresults_ls[1][label_type]['ap_strs']:
                             logger.info(ap_str)
                             log_file.write(ap_str+'\n')
 
@@ -345,3 +347,23 @@ def make_tubes(args, paths, video_list, childs, tube_file):
 
         with open(tube_file, 'wb') as f:
             pickle.dump(detection_tubes, f)
+
+def make_tubes_roadpp(args, paths, video_list, childs, tube_file):
+    """Make tubes from paths and dump in tube_file"""
+    if args.COMPUTE_TUBES or not os.path.isfile(tube_file):
+        # logger.info('building agent tubes')
+        detection_tubes = {}
+        for ltype in args.label_types[1:]:
+            detection_tubes[ltype] = {}
+        for vid, videoname in enumerate(video_list):
+            start_id = 1
+            for nlt, ltype in  enumerate(args.label_types[1:]):
+                logger.info('building tubes for '+ ltype)
+                # print(args.num_classes_list, args.label_types)
+                numc = args.num_classes_list[nlt+1]
+                all_tubes = trim_tubes(start_id, numc, copy.deepcopy(paths[videoname]), childs, args.num_classes_list, topk=args.TUBES_TOPK, alpha=args.TUBES_ALPHA, min_len=args.TUBES_MINLEN, trim_method=args.TRIM_METHOD)
+                # det_tubes = apply_labelwise_nms(all_tubes)
+                detection_tubes[ltype][videoname] = all_tubes
+                start_id += numc
+                logger.info(str(vid+1) + '/'+ str(len(video_list)) + ' '+ str(len(detection_tubes[ltype][videoname])) +' tubes built for '+ ltype+' '+ videoname)
+        return detection_tubes

@@ -4,7 +4,7 @@
  Testing 
 
 """
-
+from mergedeep import merge # merging jsons
 import os
 import time, json
 import datetime
@@ -136,14 +136,14 @@ def gen_dets_roadpp(args, net, val_road_dataset,val_road_waymo_dataset):
 
     label_types = [args.label_types[0]] + ['ego_action']
     for nlt in range(len(label_types)):
-        for ap_str in ap_strs_ls[nlt][0]:
+        for ap_str in ap_strs_ls[0][nlt]:
             logger.info(ap_str)
-        for ap_str in ap_strs_ls[nlt][1]:
+        for ap_str in ap_strs_ls[1][nlt]:
             logger.info(ap_str)
 
-    ptr_str_road = '\n{:s} ROAD MEANAP:::=> {:0.5f}'.format(label_types[nlt], mAP_ls[nlt][0])
-    ptr_str_road_waymo = '\n{:s} ROAD Waymo MEANAP:::=> {:0.5f}'.format(label_types[nlt], mAP_ls[nlt][1])
-    ptr_str_roadpp = '\n{:s} ROADPP MEANAP:::=> {:0.5f}'.format(label_types[nlt], np.mean([mAP_ls[nlt][0],mAP_ls[nlt][1]]))
+    ptr_str_road = '\n{:s} ROAD MEANAP:::=> {:0.5f}'.format(label_types[nlt], mAP_ls[0][nlt])
+    ptr_str_road_waymo = '\n{:s} ROAD Waymo MEANAP:::=> {:0.5f}'.format(label_types[nlt], mAP_ls[1][nlt])
+    ptr_str_roadpp = '\n{:s} ROADPP MEANAP:::=> {:0.5f}'.format(label_types[nlt], np.mean([mAP_ls[0][nlt],mAP_ls[1][nlt]]))
     
     logger.info(ptr_str_road)
     logger.info(ptr_str_road_waymo)
@@ -321,6 +321,50 @@ def gather_framelevel_detection(args, val_dataset):
             pickle.dump(detections, f)
     logger.info('Done dumping')
 
+def gather_framelevel_detection_roadpp(args, val_dataset):
+    
+    detections = {}
+    for l, ltype in enumerate(args.label_types):
+        detections[ltype] = {}
+    
+    if args.DATASET == 'road':
+        detections['av_actions'] = {}
+    else:
+        detections['frame_actions'] = {}
+    numv = len(val_dataset.video_list)
+
+    for vid, videoname in enumerate(val_dataset.video_list):       
+        vid_dir = os.path.join(args.det_save_dir, videoname)
+        frames_list = os.listdir(vid_dir)
+        for frame_name in frames_list:
+            if not frame_name.endswith('.pkl'):
+                continue
+            save_name = os.path.join(vid_dir, frame_name)
+            with open(save_name,'rb') as ff:
+                dets = pickle.load(ff)
+            frame_name = frame_name.rstrip('.pkl')
+            # detections[videoname+frame_name] = {}
+            if args.DATASET == 'road':
+                detections['av_actions'][videoname+frame_name] = dets['ego']
+            else:
+                detections['frame_actions'][videoname+frame_name] = dets['ego']
+            frame_dets = dets['main']
+            
+            if args.JOINT_4M_MARGINALS:
+                frame_dets = make_joint_probs_from_marginals(frame_dets, val_dataset.childs, args.num_classes_list)
+            
+            start_id = 4
+            for l, ltype in enumerate(args.label_types):
+                numc = args.num_classes_list[l]
+                ldets = get_ltype_dets(frame_dets, start_id, numc, ltype, args)
+                detections[ltype][videoname+frame_name] = ldets
+                start_id += numc
+
+        logger.info('[{}/{}] Done for {}'.format(vid, numv, videoname))
+        # break
+    logger.info('Dumping detection in ' + args.det_file_name)
+    return detections
+
 
 def get_ltype_dets(frame_dets, start_id, numc, ltype, args):
     dets = []
@@ -417,7 +461,20 @@ def eval_framewise_dets_roadpp(args, val_road_dataset,val_road_waymo_dataset):
         doeval = True
         if not os.path.isfile(args.det_file_name):
             logger.info('Gathering detection for ' + args.det_file_name)
-            gather_framelevel_detection(args, val_dataset)
+
+            detections_road = gather_framelevel_detection_roadpp(args, val_road_dataset)
+            detections_road_waymo = gather_framelevel_detection_roadpp(args, val_road_waymo_dataset)
+
+
+            detections = merge(detections_road, detections_road_waymo) 
+
+
+            with open(args.det_file_name, 'wb') as f:
+                    pickle.dump(detections, f)
+            logger.info('Done dumping')
+
+
+
             logger.info('Done Gathering detections')
             doeval = True
         else:
@@ -450,11 +507,11 @@ def eval_framewise_dets_roadpp(args, val_road_dataset,val_road_waymo_dataset):
                     rstr = '\n\nResults for ' + name1 + '\n'
                     logger.info(rstr)
                     log_file.write(rstr+'\n')
-                    log_file.write('ROADPP '+ subset + ' & ' + label_type + str(np.mean([sresults_ls[label_type]['mAP'][0],sresults_ls[label_type]['mAP'][1]])))                    
+                    log_file.write('ROADPP '+ subset + ' & ' + label_type + str(np.mean([sresults_ls[0][label_type]['mAP'],sresults_ls[1][label_type]['mAP']])))                    
                     log_file.write(rstr+'\n')
-                    results['ROADPP '+ subset + ' & ' + label_type] = {'mAP': np.mean([sresults_ls[label_type]['mAP'][0],sresults_ls[label_type]['mAP'][1]])}
-                    results[name1] = {'mAP': sresults_ls[label_type]['mAP'][0], 'APs': sresults_ls[label_type]['ap_all'][0]}
-                    for ap_str in sresults_ls[label_type]['ap_strs'][0]:
+                    results['ROADPP '+ subset + ' & ' + label_type] = {'mAP': np.mean([sresults_ls[0][label_type]['mAP'],sresults_ls[0][label_type]['mAP']])}
+                    results[name1] = {'mAP': sresults_ls[0][label_type]['mAP'], 'APs': sresults_ls[0][label_type]['ap_all']}
+                    for ap_str in sresults_ls[0][label_type]['ap_strs']:
                         logger.info(ap_str)
                         log_file.write(ap_str+'\n')
 
@@ -462,8 +519,8 @@ def eval_framewise_dets_roadpp(args, val_road_dataset,val_road_waymo_dataset):
                     rstr = '\n\nResults for ' + name2 + '\n'
                     logger.info(rstr)
                     log_file.write(rstr+'\n')
-                    results[name2] = {'mAP': sresults_ls[label_type]['mAP'][1], 'APs': sresults_ls[label_type]['ap_all'][1]}
-                    for ap_str in sresults_ls[label_type]['ap_strs'][1]:
+                    results[name2] = {'mAP': sresults_ls[0][label_type]['mAP'], 'APs': sresults_ls[1][label_type]['ap_all']}
+                    for ap_str in sresults_ls[1][label_type]['ap_strs']:
                         logger.info(ap_str)
                         log_file.write(ap_str+'\n')
 
