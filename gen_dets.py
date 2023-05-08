@@ -507,7 +507,7 @@ def eval_framewise_dets_roadpp(args, val_road_dataset,val_road_waymo_dataset):
                     rstr = '\n\nResults for ' + name1 + '\n'
                     logger.info(rstr)
                     log_file.write(rstr+'\n')
-                    log_file.write('ROADPP '+ subset + ' & ' + label_type + str(np.mean([sresults_ls[0][label_type]['mAP'],sresults_ls[1][label_type]['mAP']])))                    
+                    log_file.write('ROADPP '+ subset + ' & ' + label_type +" : "+ str(np.mean([sresults_ls[0][label_type]['mAP'],sresults_ls[1][label_type]['mAP']])))                    
                     log_file.write(rstr+'\n')
                     results['ROADPP '+ subset + ' & ' + label_type] = {'mAP': np.mean([sresults_ls[0][label_type]['mAP'],sresults_ls[0][label_type]['mAP']])}
                     results[name1] = {'mAP': sresults_ls[0][label_type]['mAP'], 'APs': sresults_ls[0][label_type]['ap_all']}

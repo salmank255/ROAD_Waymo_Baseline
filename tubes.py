@@ -182,7 +182,7 @@ def build_eval_tubes_roadpp(args, val_road_dataset,val_road_waymo_dataset):
                         sresults_ls.append(sresults)
 
                     for _, label_type in enumerate(args.label_types[1:]):
-                        log_file.write('ROADPP '+ subset + ' & ' + label_type + str(np.mean([sresults_ls[0][label_type]['mAP'],sresults_ls[1][label_type]['mAP']])))                    
+                        log_file.write('ROADPP '+ subset + ' & ' + label_type + " : "+ str(np.mean([sresults_ls[0][label_type]['mAP'],sresults_ls[1][label_type]['mAP']])))                    
                         results['ROADPP '+ subset + ' & ' + label_type] = {'mAP': np.mean([sresults_ls[0][label_type]['mAP'],sresults_ls[1][label_type]['mAP']])}
                         name = 'ROAD ' + subset + ' & ' + label_type
                         rstr = '\n\nResults for {:s} @ {:0.02f} {:s}\n'.format(name, TUBES_EVAL_THRESH, metric_type)
@@ -215,29 +215,29 @@ def build_eval_tubes_roadpp(args, val_road_dataset,val_road_waymo_dataset):
 
                 with open(result_file, 'w') as f:
                     json.dump(results, f)
-        mcount = 0
-        for subset in args.SUBSETS:
-            if len(subset)<2:
-                continue
-            for nlt, label_type in enumerate(args.label_types[1:]):
-                for name in ['ROAD ' + subset + ' & ' + label_type,'ROAD waymo '+ subset + ' & ' + label_type]:
-                    # name = subset + ' & ' + label_type
-                    print(args.label_types, len(args.all_classes))
-                    table += '|\n'
-                    table += '|:-:|:-:|:-:|:-:|:-:|:-:|:-:|\n' + map_line[mcount] + '\n'
-                    mcount += 1
-                    for c, cls in enumerate(args.all_classes[nlt+1]):
-                        table += '|{:s}'.format(cls)
-                        for metric_type in metric_types:
-                            for TUBES_EVAL_THRESH in args.TUBES_EVAL_THRESHS:
-                                result_file = "{pt:s}/video-ap-results-{tm:s}-{a:d}-{th:d}-{m:s}.json".format(tm=args.TRIM_METHOD, a=int(args.TUBES_ALPHA*10), pt=args.tube_save_dir, th=int(TUBES_EVAL_THRESH*100), m=metric_type)
-                                if args.JOINT_4M_MARGINALS:
-                                    result_file = "{pt:s}/video-ap-results-{tm:s}-{a:d}-{th:d}-{m:s}-j4m.json".format(tm=args.TRIM_METHOD, a=int(args.TUBES_ALPHA*10), pt=args.tube_save_dir, th=int(TUBES_EVAL_THRESH*100), m=metric_type)
-                                with open(result_file, 'r') as f:
-                                    results = json.load(f)
-                                table += '|{:0.01f}/{:0.01f}'.format(results[name]['APs'][c],results[name]['Recalls'][c])
-                        table += '|\n'
-                    logger.info(table) 
+        # mcount = 0
+        # for subset in args.SUBSETS:
+        #     if len(subset)<2:
+        #         continue
+        #     for nlt, label_type in enumerate(args.label_types[1:]):
+        #         for name in ['ROAD ' + subset + ' & ' + label_type,'ROAD waymo '+ subset + ' & ' + label_type]:
+        #             # name = subset + ' & ' + label_type
+        #             print(args.label_types, len(args.all_classes))
+        #             table += '|\n'
+        #             table += '|:-:|:-:|:-:|:-:|:-:|:-:|:-:|\n' + map_line[mcount] + '\n'
+        #             mcount += 1
+        #             for c, cls in enumerate(args.all_classes[nlt+1]):
+        #                 table += '|{:s}'.format(cls)
+        #                 for metric_type in metric_types:
+        #                     for TUBES_EVAL_THRESH in args.TUBES_EVAL_THRESHS:
+        #                         result_file = "{pt:s}/video-ap-results-{tm:s}-{a:d}-{th:d}-{m:s}.json".format(tm=args.TRIM_METHOD, a=int(args.TUBES_ALPHA*10), pt=args.tube_save_dir, th=int(TUBES_EVAL_THRESH*100), m=metric_type)
+        #                         if args.JOINT_4M_MARGINALS:
+        #                             result_file = "{pt:s}/video-ap-results-{tm:s}-{a:d}-{th:d}-{m:s}-j4m.json".format(tm=args.TRIM_METHOD, a=int(args.TUBES_ALPHA*10), pt=args.tube_save_dir, th=int(TUBES_EVAL_THRESH*100), m=metric_type)
+        #                         with open(result_file, 'r') as f:
+        #                             results = json.load(f)
+        #                         table += '|{:0.01f}/{:0.01f}'.format(results[name]['APs'][c],results[name]['Recalls'][c])
+        #                 table += '|\n'
+        #             logger.info(table) 
         log_file.close()
 
 
