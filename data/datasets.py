@@ -758,8 +758,7 @@ class VideoDataset(tutils.data.Dataset):
 
 
     def _make_lists_road(self):
-
-        if self.MODE == 'Train':
+        if self.MODE == 'train':
             self.anno_file  = os.path.join(self.root, 'road_trainval_v1.0.json')
         else:
             self.anno_file  = os.path.join(self.root, 'road_test_v1.0.json')
