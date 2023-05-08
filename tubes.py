@@ -151,10 +151,10 @@ def build_eval_tubes_roadpp(args, val_road_dataset,val_road_waymo_dataset):
         detection_tubes_road = make_tubes_roadpp(args, road_paths, val_road_dataset.video_list, childs_road, tube_file)
         detection_tubes_road_waymo = make_tubes_roadpp(args, road_waymo_paths, val_road_waymo_dataset.video_list, childs_road_waymo, tube_file)
 
-        detection_tubes = merge(detection_tubes_road, detection_tubes_road_waymo) 
-
-        with open(tube_file, 'wb') as f:
-            pickle.dump(detection_tubes, f)
+        if not os.path.isfile(tube_file):
+            detection_tubes = merge(detection_tubes_road, detection_tubes_road_waymo) 
+            with open(tube_file, 'wb') as f:
+                pickle.dump(detection_tubes, f)
 
         # torch.cuda.synchronize()
         logger.info('Computation time {:0.2f}'.format(time.perf_counter() - tt0))
@@ -204,8 +204,8 @@ def build_eval_tubes_roadpp(args, val_road_dataset,val_road_waymo_dataset):
                         results[name] = {'mAP': sresults_ls[1][label_type]['mAP'], 'APs': sresults_ls[1][label_type]['ap_all'],
                                         'mR':sresults_ls[1][label_type]['mR'], 'Recalls': sresults_ls[1][label_type]['recalls'],
                                         'ap_strs': sresults_ls[1][label_type]['ap_strs']}
-                        map_line[mcount] += '{:0.1f}/{:0.01f}|'.format(sresults_ls[1][label_type]['mAP'],sresults_ls[1][label_type]['mR'])
-                        mcount += 1
+                        # map_line[mcount] += '{:0.1f}/{:0.01f}|'.format(sresults_ls[1][label_type]['mAP'],sresults_ls[1][label_type]['mR'])
+                        # mcount += 1
                         for ap_str in sresults_ls[1][label_type]['ap_strs']:
                             logger.info(ap_str)
                             log_file.write(ap_str+'\n')
