@@ -46,6 +46,16 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 python main.py /home/user/ /home/user/  /home/user/
 ```
 
 Second instance of `/home/user/` in above command specifies where checkpoint weight and logs are going to be stored. In this case, checkpoints and logs will be in `/home/user/road-waymo/cache/<experiment-name>/`.
+```
+--ARCH          ---> By default it's resent50 but our code also support resnet101
+--MODEL_TYPE    ---> We support six different models including I3D and SlowFast
+--DATASET       ---> Dataset specifiy the training dataset as we support multiple datasets including road, road_waymo, and roadpp (both combine)
+--TEST_DATASET  ---> Dataset use for evaluation in training MODE
+--TRAIN_SUBSETS ---> It will be train in all cased except road where we have multiple splits
+--SEQ_LEN       ---> We did experiments for sequence length of 8 but we support other lenths as well
+--TEST_SEQ_LEN  ---> Test sequence length is for prediction of frames at a time we support mutliple lens and tested from 8 to 32.
+--BATCH_SIZE    ---> The batch size depends upon the number of GPUs and/or your GPU memory, if your GPU memory is 24 GB we recommend a batch per GPU. For A100 80GB of GPU we tested upto 5 batchs per GPU.
+```
 
 - Training notes:
   * The VRAM required for a single batch is 16GB, in this case, you will need 4 GPUs (each with at least 16GB VRAM) to run training.
