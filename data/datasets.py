@@ -406,6 +406,7 @@ class VideoDataset(tutils.data.Dataset):
         # if len(args.ANNO_ROOT)>1:
         #     self.anno_root = args.ANNO_ROOT 
         self.used_labels = {"agent_labels": ["Ped", "Car", "Cyc", "Mobike", "SmalVeh", "MedVeh", "LarVeh", "Bus", "EmVeh", "TL"],
+                        "av_action_labels": ["AV-Stop","AV-Mov","AV-TurRht","AV-TurLft","AV-MovRht","AV-MovLft"],
                        "action_labels": ["Red", "Amber", "Green", "MovAway", "MovTow", "Mov", "Rev", "Brake", "Stop", "IncatLft", "IncatRht", "HazLit", "TurLft", "TurRht", "MovRht", "MovLft", "Ovtak", "Wait2X", "XingFmLft", "XingFmRht", "Xing", "PushObj"],
                        "loc_labels": ["VehLane", "OutgoLane", "OutgoCycLane", "OutgoBusLane", "IncomLane", "IncomCycLane", "IncomBusLane", "Pav", "LftPav", "RhtPav", "Jun", "xing", "BusStop", "parking", "LftParking", "rightParking"],
                        "duplex_labels": ["Ped-MovAway", "Ped-MovTow", "Ped-Mov", "Ped-Stop", "Ped-Wait2X", "Ped-XingFmLft", "Ped-XingFmRht", "Ped-Xing", "Ped-PushObj", "Car-MovAway", "Car-MovTow", "Car-Brake", "Car-Stop", "Car-IncatLft", "Car-IncatRht", "Car-HazLit", "Car-TurLft", "Car-TurRht", "Car-MovRht", "Car-MovLft", "Car-XingFmLft", "Car-XingFmRht", "Cyc-MovAway", "Cyc-MovTow", "Cyc-Stop", "Mobike-Stop", "MedVeh-MovAway", "MedVeh-MovTow", "MedVeh-Brake", "MedVeh-Stop", "MedVeh-IncatLft", "MedVeh-IncatRht", "MedVeh-HazLit", "MedVeh-TurRht", "MedVeh-XingFmLft", "MedVeh-XingFmRht", "LarVeh-MovAway", "LarVeh-MovTow", "LarVeh-Stop", "LarVeh-HazLit", "Bus-MovAway", "Bus-MovTow", "Bus-Brake", "Bus-Stop", "Bus-HazLit", "EmVeh-Stop", "TL-Red", "TL-Amber", "TL-Green"], 
@@ -634,7 +635,7 @@ class VideoDataset(tutils.data.Dataset):
             self.num_classes_list.append(numc)
             self.num_classes += numc
         
-        self.ego_classes = final_annots['av_action_labels']
+        self.ego_classes = self.used_labels['av_action_labels']
         self.num_ego_classes = len(self.ego_classes)
 
         counts = np.zeros((len(self.used_labels[self.label_types[-1] + '_labels']), num_label_type), dtype=np.int32)
@@ -669,7 +670,12 @@ class VideoDataset(tutils.data.Dataset):
                     
                     frame_index = frame_num-1  
                     frame_level_annos[frame_index]['labeled'] = True 
-                    # frame_level_annos[frame_index]['ego_label'] = frames[frame_id]['av_action_ids'][0]
+                    if len(frames[frame_id]['av_action_ids']) == 0:
+                        frame_level_annos[frame_index]['ego_label'] = 0
+                    elif frames[frame_id]['av_action_ids'][0] >5:
+                        frame_level_annos[frame_index]['ego_label'] = 0
+                    else:
+                        frame_level_annos[frame_index]['ego_label'] = frames[frame_id]['av_action_ids'][0]
                     
                     frame = frames[frame_id]
                     if 'annos' not in frame.keys():
@@ -779,7 +785,7 @@ class VideoDataset(tutils.data.Dataset):
             self.num_classes_list.append(numc)
             self.num_classes += numc
         
-        self.ego_classes = final_annots['av_action_labels']
+        self.ego_classes = self.used_labels['av_action_labels']
         self.num_ego_classes = len(self.ego_classes)
         
         counts = np.zeros((len(self.used_labels[self.label_types[-1] + '_labels']), num_label_type), dtype=np.int32)
