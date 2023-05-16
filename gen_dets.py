@@ -87,6 +87,7 @@ def gen_dets_roadpp(args, net, val_road_dataset,val_road_waymo_dataset):
     net.eval()
     ap_strs_ls = []
     mAP_ls = []
+    ap_all_ls = []
     for val_dataset in [val_road_dataset,val_road_waymo_dataset]:
 
         val_data_loader = data_utils.DataLoader(val_dataset, int(args.TEST_BATCH_SIZE), num_workers=args.NUM_WORKERS,
@@ -130,8 +131,9 @@ def gen_dets_roadpp(args, net, val_road_dataset,val_road_waymo_dataset):
             tt0 = time.perf_counter()
             
             net.eval() # switch net to evaluation mode        
-            mAP, _, ap_strs = perform_detection(args, net, val_data_loader, val_dataset, epoch)
+            mAP,ap_all, ap_strs = perform_detection(args, net, val_data_loader, val_dataset, epoch)
             mAP_ls.append(mAP)
+            ap_all_ls.append(ap_all)
             ap_strs_ls.append(ap_strs)
 
     label_types = [args.label_types[0]] + ['ego_action']
@@ -143,7 +145,8 @@ def gen_dets_roadpp(args, net, val_road_dataset,val_road_waymo_dataset):
 
     ptr_str_road = '\n{:s} ROAD MEANAP:::=> {:0.5f}'.format(label_types[nlt], mAP_ls[0][nlt])
     ptr_str_road_waymo = '\n{:s} ROAD Waymo MEANAP:::=> {:0.5f}'.format(label_types[nlt], mAP_ls[1][nlt])
-    ptr_str_roadpp = '\n{:s} ROADPP MEANAP:::=> {:0.5f}'.format(label_types[nlt], np.mean([mAP_ls[0][nlt],mAP_ls[1][nlt]]))
+    ptr_str_roadpp = '\n{:s} ROADPP MEANAP - final aps :::=> {:0.5f}'.format(label_types[nlt], np.mean([mAP_ls[0][nlt],mAP_ls[1][nlt]]))
+    ptr_str_roadpp = '\n{:s} ROADPP MEANAP - class-wise aps:::=> {:0.5f}'.format(label_types[nlt], np.mean([ap_all_ls[0][nlt]+ap_all_ls[1][nlt]]))
     
     logger.info(ptr_str_road)
     logger.info(ptr_str_road_waymo)
@@ -507,9 +510,13 @@ def eval_framewise_dets_roadpp(args, val_road_dataset,val_road_waymo_dataset):
                     rstr = '\n\nResults for ' + name1 + '\n'
                     logger.info(rstr)
                     log_file.write(rstr+'\n')
-                    log_file.write('ROADPP '+ subset + ' & ' + label_type +" : "+ str(np.mean([sresults_ls[0][label_type]['mAP'],sresults_ls[1][label_type]['mAP']])))                    
+                    log_file.write('ROADPP final '+ subset + ' & ' + label_type +" : "+ str(np.mean([sresults_ls[0][label_type]['mAP'],sresults_ls[1][label_type]['mAP']])))                    
+                    log_file.write('ROADPP class-wise '+ subset + ' & ' + label_type +" : "+ str(np.mean([sresults_ls[0][label_type]['ap_all']+sresults_ls[1][label_type]['ap_all']])))                    
+                    
                     log_file.write(rstr+'\n')
-                    results['ROADPP '+ subset + ' & ' + label_type] = {'mAP': np.mean([sresults_ls[0][label_type]['mAP'],sresults_ls[0][label_type]['mAP']])}
+                    results['ROADPP final '+ subset + ' & ' + label_type] = {'mAP': np.mean([sresults_ls[0][label_type]['mAP'],sresults_ls[1][label_type]['mAP']])}
+                    results['ROADPP class-wise '+ subset + ' & ' + label_type] = {'mAP': np.mean([sresults_ls[0][label_type]['ap_all']+sresults_ls[1][label_type]['ap_all']])}
+                    
                     results[name1] = {'mAP': sresults_ls[0][label_type]['mAP'], 'APs': sresults_ls[0][label_type]['ap_all']}
                     for ap_str in sresults_ls[0][label_type]['ap_strs']:
                         logger.info(ap_str)

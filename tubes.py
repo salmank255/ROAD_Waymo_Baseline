@@ -182,8 +182,12 @@ def build_eval_tubes_roadpp(args, val_road_dataset,val_road_waymo_dataset):
                         sresults_ls.append(sresults)
 
                     for _, label_type in enumerate(args.label_types[1:]):
-                        log_file.write('ROADPP '+ subset + ' & ' + label_type + " : "+ str(np.mean([sresults_ls[0][label_type]['mAP'],sresults_ls[1][label_type]['mAP']])))                    
-                        results['ROADPP '+ subset + ' & ' + label_type] = {'mAP': np.mean([sresults_ls[0][label_type]['mAP'],sresults_ls[1][label_type]['mAP']])}
+                        log_file.write('ROADPP final '+ subset + ' & ' + label_type + " : "+ str(np.mean([sresults_ls[0][label_type]['mAP'],sresults_ls[1][label_type]['mAP']])))                    
+                        results['ROADPP class-wise '+ subset + ' & ' + label_type] = {'mAP': np.mean([sresults_ls[0][label_type]['ap_all']+sresults_ls[1][label_type]['ap_all']])}
+                        
+                        log_file.write('ROADPP final '+ subset + ' & ' + label_type + " : "+ str(np.mean([sresults_ls[0][label_type]['mAP'],sresults_ls[1][label_type]['mAP']])))                    
+                        results['ROADPP class-wise '+ subset + ' & ' + label_type] = {'mAP': np.mean([sresults_ls[0][label_type]['ap_all']+sresults_ls[1][label_type]['ap_all']])}
+                        
                         name = 'ROAD ' + subset + ' & ' + label_type
                         rstr = '\n\nResults for {:s} @ {:0.02f} {:s}\n'.format(name, TUBES_EVAL_THRESH, metric_type)
                         logger.info(rstr)

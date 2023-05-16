@@ -11,8 +11,8 @@ workbook = xlsxwriter.Workbook('label_count.xlsx')
 worksheet = workbook.add_worksheet("My sheet")
 
 
-road_trainval_path = '../roadpp/road_plus_plus_trainval_v1.0.json'
-road_test_path = '../roadpp/road_plus_plus_test_v1.0.json'
+road_trainval_path = '../road_waymo/road_waymo_trainval_v1.1.json'
+road_test_path = '../road_waymo/road_waymo_test_v1.1.json'
 
 row = 0
 col = 0
@@ -40,6 +40,33 @@ col = 0
 #     print("Total tubes:", sum(agent_tubes))
 #     for i in range(len(agent_tubes)):
 #         print(agents[i] +" : "+ str(agent_tubes[i]))
+
+
+
+# AV action labels count
+
+for d_path in [road_trainval_path,road_test_path]:
+    with open(d_path,'r') as fff:
+        road_json = json.load(fff)
+
+
+    av_actions = road_json['all_av_action_labels']
+    av_action_labs = np.zeros(len(av_actions),dtype=int)
+    for videoname in road_json['db']:
+        for frame in road_json['db'][videoname]['frames']:
+            actns = road_json['db'][videoname]['frames'][frame]['av_action_ids']
+            for actn in actns:
+                av_action_labs[actn] += 1
+
+    print("All AV actions labs:", d_path)
+    worksheet.write(row, col, d_path)
+    row += 1  
+    print("Total labels:", sum(av_action_labs))
+    for i in range(len(av_action_labs)):
+        print(av_actions[i] +" : "+ str(av_action_labs[i]))
+        worksheet.write(row, col, av_actions[i])
+        worksheet.write(row, col + 1, str(av_action_labs[i]))
+        row += 1
 
 
 # Agent labels count
