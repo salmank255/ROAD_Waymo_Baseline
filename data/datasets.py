@@ -816,8 +816,13 @@ class VideoDataset(tutils.data.Dataset):
                     
                     frame_index = frame_num-1  
                     frame_level_annos[frame_index]['labeled'] = True 
-                    frame_level_annos[frame_index]['ego_label'] = frames[frame_id]['av_action_ids'][0]
-                    
+                    if len(frames[frame_id]['av_action_ids']) == 0:
+                        frame_level_annos[frame_index]['ego_label'] = 0
+                    elif frames[frame_id]['av_action_ids'][0] >5:
+                        frame_level_annos[frame_index]['ego_label'] = 0
+                    else:
+                        frame_level_annos[frame_index]['ego_label'] = frames[frame_id]['av_action_ids'][0]
+
                     frame = frames[frame_id]
                     if 'annos' not in frame.keys():
                         frame = {'annos':{}}
