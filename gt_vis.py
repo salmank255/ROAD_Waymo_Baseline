@@ -38,7 +38,7 @@ def main():
     parser.add_argument('SAVE_ROOT', help='Location to root directory for saving checkpoint models') # /mnt/mars-alpha/
     parser.add_argument('MODEL_PATH',help='Location to root directory where kinetics pretrained models are stored')
     
-    parser.add_argument('--MODE', default='train',
+    parser.add_argument('--MODE', default='gen_dets',
                         help='MODE can be train, gen_dets, eval_frames, eval_tubes define SUBSETS accordingly, build tubes')
     # Name of backbone network, e.g. resnet18, resnet34, resnet50, resnet101 resnet152 are supported
     parser.add_argument('--ARCH', default='resnet50', 
@@ -68,16 +68,16 @@ def main():
                     type=int, help='Temporal kernel size of regression head')
     
     #  Name of the dataset only voc or coco are supported
-    parser.add_argument('--DATASET', default='road', 
+    parser.add_argument('--DATASET', default='road_waymo', 
                         type=str,help='dataset being used')
     parser.add_argument('--TRAIN_SUBSETS', default='train_3,', 
                         type=str,help='Training SUBSETS seprated by ,')
     parser.add_argument('--VAL_SUBSETS', default='', 
                         type=str,help='Validation SUBSETS seprated by ,')
-    parser.add_argument('--TEST_SUBSETS', default='', 
+    parser.add_argument('--TEST_SUBSETS', default='val', 
                         type=str,help='Testing SUBSETS seprated by ,')
     # Input size of image only 600 is supprted at the moment 
-    parser.add_argument('--MIN_SIZE', default=512, 
+    parser.add_argument('--MIN_SIZE', default=600, 
                         type=int, help='Input Size for FPN')
     
     #  data loading argumnets
@@ -210,46 +210,46 @@ def main():
     else:
         args.SEQ_LEN = args.TEST_SEQ_LEN
 
-    ttransform = transforms.Compose([
-                        vtf.ResizeClip(args.MIN_SIZE, args.MAX_SIZE),
-                        vtf.ToTensorStack(),
-                        vtf.Normalize(mean=args.MEANS, std=args.STDS)])
-    if args.MODE in ['train','val']:
-        # args.CONF_THRESH = 0.05
-        args.SUBSETS = args.TRAIN_SUBSETS
-        train_transform = transforms.Compose([
-                            vtf.ResizeClip(args.MIN_SIZE, args.MAX_SIZE),
-                            vtf.ToTensorStack(),
-                            vtf.Normalize(mean=args.MEANS, std=args.STDS)])
+    # ttransform = transforms.Compose([
+    #                     vtf.ResizeClip(args.MIN_SIZE, args.MAX_SIZE),
+    #                     vtf.ToTensorStack(),
+    #                     vtf.Normalize(mean=args.MEANS, std=args.STDS)])
+    # if args.MODE in ['train','val']:
+    #     # args.CONF_THRESH = 0.05
+    #     args.SUBSETS = args.TRAIN_SUBSETS
+    #     train_transform = transforms.Compose([
+    #                         vtf.ResizeClip(args.MIN_SIZE, args.MAX_SIZE),
+    #                         vtf.ToTensorStack(),
+    #                         vtf.Normalize(mean=args.MEANS, std=args.STDS)])
         
-        # train_skip_step = args.SEQ_LEN
-        # if args.SEQ_LEN>4 and args.SEQ_LEN<=10:
-        #     train_skip_step = args.SEQ_LEN-2
-        if args.SEQ_LEN>10:
-            train_skip_step = args.SEQ_LEN + (args.MAX_SEQ_STEP - 1) * 2 - 2
-        else:
-            train_skip_step = args.SEQ_LEN 
+    #     # train_skip_step = args.SEQ_LEN
+    #     # if args.SEQ_LEN>4 and args.SEQ_LEN<=10:
+    #     #     train_skip_step = args.SEQ_LEN-2
+    #     if args.SEQ_LEN>10:
+    #         train_skip_step = args.SEQ_LEN + (args.MAX_SEQ_STEP - 1) * 2 - 2
+    #     else:
+    #         train_skip_step = args.SEQ_LEN 
 
-        train_dataset = VideoDataset(args, train=True, skip_step=train_skip_step, transform=train_transform)
-        logger.info('Done Loading Dataset Train Dataset')
-        ## For validation set
-        full_test = False
-        args.SUBSETS = args.VAL_SUBSETS
-        skip_step = args.SEQ_LEN*8
-    else:
-        args.SEQ_LEN = args.TEST_SEQ_LEN
-        args.MAX_SEQ_STEP = 1
-        args.SUBSETS = args.TEST_SUBSETS
-        full_test = True #args.MODE != 'train'
-        args.skip_beggning = 0
-        args.skip_ending = 0
-        if args.MODEL_TYPE == 'I3D':
-            args.skip_beggning = 2
-            args.skip_ending = 2
-        elif args.MODEL_TYPE != 'C2D':
-            args.skip_beggning = 2
+    #     train_dataset = VideoDataset(args,args.DATASET, train=True, skip_step=train_skip_step, transform=train_transform)
+    #     logger.info('Done Loading Dataset Train Dataset')
+    #     ## For validation set
+    #     full_test = False
+    #     args.SUBSETS = args.VAL_SUBSETS
+    #     skip_step = args.SEQ_LEN*8
+    # else:
+    args.SEQ_LEN = args.TEST_SEQ_LEN
+    args.MAX_SEQ_STEP = 1
+    args.SUBSETS = args.TEST_SUBSETS
+    full_test = True #args.MODE != 'train'
+    args.skip_beggning = 0
+    args.skip_ending = 0
+    if args.MODEL_TYPE == 'I3D':
+        args.skip_beggning = 2
+        args.skip_ending = 2
+    elif args.MODEL_TYPE != 'C2D':
+        args.skip_beggning = 2
 
-        skip_step = args.SEQ_LEN
+    skip_step = args.SEQ_LEN
 
     
 
@@ -259,7 +259,7 @@ def main():
                         vtf.Normalize(mean=args.MEANS,std=args.STDS)])
     
 
-    val_dataset = VideoDataset(args, train=False, transform=val_transform, skip_step=skip_step, full_test=full_test)
+    val_dataset = VideoDataset(args, args.DATASET,train=False, transform=val_transform, skip_step=skip_step, full_test=full_test)
     logger.info('Done Loading Dataset Validation Dataset')
 
 
@@ -290,11 +290,13 @@ def main():
     val_data_loader = data_utils.DataLoader(val_dataset, 1, num_workers=args.NUM_WORKERS,
                                             shuffle=False, pin_memory=True, collate_fn=custum_collate)
 
-    video = set_out_video('ROAD_test_vid_'+str(args.GEN_CONF_THRESH)+'_.MP4')
+    video = set_out_video('ROAD_waymo_test_vid_'+str(args.GEN_CONF_THRESH)+'_.MP4')
     # activation = torch.nn.Sigmoid().cuda()
     # with torch.no_grad():
-    for val_itr, (images, gt_boxes, gt_targets, ego_labels, batch_counts, img_indexs, wh,videonames,start_frames,img_names) in enumerate(val_data_loader):
+    for val_itr, (images, gt_boxes, gt_targets, ego_labels, batch_counts, img_indexs, wh,videonames,start_frames,img_names,g_ws,g_hs) in enumerate(val_data_loader):
 
+        g_w = g_ws[0]
+        g_h = g_hs[0]
         
         print(val_itr)
         images = images.cuda(0, non_blocking=True)
@@ -329,10 +331,10 @@ def main():
                 for acc in range(len(gt_trip_ind)):
                     gt_trip = gt_trip+'_'+args.all_classes[5][gt_trip_ind[acc]]
 
-                gt_box[0] = (gt_box[0]/691)*org_width # width x1
-                gt_box[2] = (gt_box[2]/691)*org_width # width x2
-                gt_box[1] = (gt_box[1]/461)*org_height # height y1
-                gt_box[3] = (gt_box[3]/461)*org_height # height y2
+                gt_box[0] = (gt_box[0]/g_h)*org_width # width x1
+                gt_box[2] = (gt_box[2]/g_h)*org_width # width x2
+                gt_box[1] = (gt_box[1]/g_w)*org_height # height y1
+                gt_box[3] = (gt_box[3]/g_w)*org_height # height y2
 
 
                 # print(int(boxes[bb][0]), int(boxes[bb][1]),int(boxes[bb][2]), int(boxes[bb][3]))
