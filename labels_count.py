@@ -11,8 +11,8 @@ workbook = xlsxwriter.Workbook('label_count.xlsx')
 worksheet = workbook.add_worksheet("My sheet")
 
 
-road_trainval_path = '../road_waymo/road_waymo_trainval_v1.1.json'
-road_test_path = '../road_waymo/road_waymo_test_v1.1.json'
+road_trainval_path = '../road_waymo/road_waymo_trainval_v1.0.json'
+road_test_path = '../road_waymo/road_waymo_test_v1.0.json'
 
 row = 0
 col = 0
