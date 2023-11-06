@@ -26,8 +26,8 @@ for d_path in [road_trainval_path,road_test_path]:
 
 
     av_actions = road_json['all_av_action_labels']
-    av_action_labs = np.zeros(len(av_actions),dtype=int)
     for city in ['location_phx','location_other','location_sf']:
+        av_action_labs = np.zeros(len(av_actions),dtype=int)
         for videoname in road_json['db']:
             if road_json['db'][videoname]['location'] != city:
                 continue
@@ -38,7 +38,10 @@ for d_path in [road_trainval_path,road_test_path]:
 
         print(city+" AV actions labs: "+ d_path)
         worksheet.write(row, col, city+" AV actions labs: "+ d_path)
-        row += 1  
+        row += 1
+        worksheet.write(row, col, "Total: ")
+        worksheet.write(row, col+1, sum(av_action_labs))
+        row += 1
         print("Total labels:", sum(av_action_labs))
         for i in range(len(av_action_labs)):
             print(av_actions[i] +" : "+ str(av_action_labs[i]))
@@ -54,9 +57,10 @@ for d_path in [road_trainval_path,road_test_path]:
         road_json = json.load(fff)
 
     agents = road_json['all_agent_labels']
-    agent_labs = np.zeros(len(agents),dtype=int)
+
     tube_set = set()
     for city in ['location_phx','location_other','location_sf']:
+        agent_labs = np.zeros(len(agents),dtype=int)
         for videoname in road_json['db']:
             if road_json['db'][videoname]['location'] != city:
                 continue
@@ -70,6 +74,9 @@ for d_path in [road_trainval_path,road_test_path]:
         print(city+ " agent labs: "+ d_path)
         worksheet.write(row, col, city+ " agent labs: "+ d_path)
         row += 1    
+        worksheet.write(row, col, "Total: ")
+        worksheet.write(row, col+1, sum(agent_labs))
+        row += 1
         print("Total labels:", sum(agent_labs))
         for i in range(len(agent_labs)):
             print(agents[i] +" : "+ str(agent_labs[i]))
@@ -86,9 +93,10 @@ for d_path in [road_trainval_path,road_test_path]:
 
 
     actions = road_json['all_action_labels']
-    action_labs = np.zeros(len(actions),dtype=int)
+    
     tube_set = set()
     for city in ['location_phx','location_other','location_sf']:
+        action_labs = np.zeros(len(actions),dtype=int)
         for videoname in road_json['db']:
             if road_json['db'][videoname]['location'] != city:
                 continue
@@ -101,6 +109,9 @@ for d_path in [road_trainval_path,road_test_path]:
 
         print(city+"  actions labs: "+ d_path)
         worksheet.write(row, col, city+"  actions labs: "+ d_path)
+        row += 1
+        worksheet.write(row, col, "Total: ")
+        worksheet.write(row, col+1, sum(action_labs))
         row += 1  
         print("Total labels:", sum(action_labs))
         for i in range(len(action_labs)):
@@ -116,9 +127,10 @@ for d_path in [road_trainval_path,road_test_path]:
         road_json = json.load(fff)
 
     locs = road_json['old_loc_labels']
-    loc_labs = np.zeros(len(locs),dtype=int)
+    
     tube_set = set()
     for city in ['location_phx','location_other','location_sf']:
+        loc_labs = np.zeros(len(locs),dtype=int)
         for videoname in road_json['db']:
             if road_json['db'][videoname]['location'] != city:
                 continue
@@ -131,7 +143,10 @@ for d_path in [road_trainval_path,road_test_path]:
 
         print(city+"  location labs: "+ d_path)
         worksheet.write(row, col, city+"  location labs: "+ d_path)
-        row += 1  
+        row += 1
+        worksheet.write(row, col, "Total: ")
+        worksheet.write(row, col+1, sum(loc_labs))
+        row += 1    
         print("Total labels:", sum(loc_labs))
         for i in range(len(loc_labs)):
             print(locs[i] +" : "+ str(loc_labs[i]))
@@ -148,9 +163,10 @@ for d_path in [road_trainval_path,road_test_path]:
         road_json = json.load(fff)
 
     dups = road_json['all_duplex_labels']
-    dup_labs = np.zeros(len(dups),dtype=int)
+    
     tube_set = set()
     for city in ['location_phx','location_other','location_sf']:
+        dup_labs = np.zeros(len(dups),dtype=int)
         for videoname in road_json['db']:
             if road_json['db'][videoname]['location'] != city:
                 continue
@@ -163,6 +179,9 @@ for d_path in [road_trainval_path,road_test_path]:
 
         print(city+"  duplex labs: "+ d_path)
         worksheet.write(row, col, city+"  duplex labs: "+ d_path)
+        row += 1
+        worksheet.write(row, col, "Total: ")
+        worksheet.write(row, col+1, sum(dup_labs))
         row += 1  
         print("Total labels:", sum(dup_labs))
         for i in range(len(dup_labs)):
@@ -184,9 +203,10 @@ for d_path in [road_trainval_path,road_test_path]:
         road_json = json.load(fff)
 
     trips = road_json['all_triplet_labels']
-    trip_labs = np.zeros(len(trips),dtype=int)
+    
     tube_set = set()
     for city in ['location_phx','location_other','location_sf']:
+        trip_labs = np.zeros(len(trips),dtype=int)
         for videoname in road_json['db']:
             if road_json['db'][videoname]['location'] != city:
                 continue
@@ -199,7 +219,10 @@ for d_path in [road_trainval_path,road_test_path]:
 
         print(city+"  triplet labs: "+ d_path)
         worksheet.write(row, col, city+"  triplet labs: "+ d_path)
-        row += 1  
+        row += 1
+        worksheet.write(row, col, "Total: ")
+        worksheet.write(row, col+1, sum(trip_labs))
+        row += 1    
         print("Total labels:", sum(trip_labs))
         for i in range(len(trip_labs)):
             if trip_labs[i] >500:
