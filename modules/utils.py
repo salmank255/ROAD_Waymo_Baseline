@@ -142,11 +142,11 @@ def set_args(args):
 def create_exp_name(args):
     """Create name of experiment using training parameters """
     splits = ''.join([split[0]+split[-1] for split in args.TRAIN_SUBSETS])
-    args.exp_name = '{:s}{:s}{:d}-P{:s}-b{:0d}s{:d}x{:d}x{:d}-{:s}{:s}-h{:d}x{:d}x{:d}'.format(
+    args.exp_name = '{:s}{:s}{:d}-P{:s}-b{:0d}s{:d}x{:d}x{:d}-{:s}-{:s}{:s}-h{:d}x{:d}x{:d}'.format(
         args.ARCH, args.MODEL_TYPE,
         args.MIN_SIZE, args.model_init, args.BATCH_SIZE,
         args.SEQ_LEN, args.MIN_SEQ_STEP, args.MAX_SEQ_STEP,
-        args.DATASET, splits, 
+        args.DATASET,args.CITY, splits, 
         args.HEAD_LAYERS, args.CLS_HEAD_TIME_SIZE,
         args.REG_HEAD_TIME_SIZE,
         )

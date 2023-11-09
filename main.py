@@ -60,6 +60,10 @@ def main():
                         type=str,help='dataset being used')
     parser.add_argument('--TEST_DATASET', default='road', 
                         type=str,help='dataset used for testing')
+    parser.add_argument('--CITY', default='all', 
+                        type=str,help='city used for training')
+    parser.add_argument('--TEST_CITY', default='all', 
+                        type=str,help='dataset used for testing')
     parser.add_argument('--TRAIN_SUBSETS', default='train,', 
                         type=str,help='Training SUBSETS seprated by ,')
     parser.add_argument('--VAL_SUBSETS', default='val', 
@@ -196,6 +200,8 @@ def main():
     logger.info(sys.version)
 
     assert args.MODE in ['train','val','gen_dets','eval_frames', 'eval_tubes'], 'MODE must be from ' + ','.join(['train','test','tubes'])
+    assert args.CITY in ['all','phx','other','sf'], 'CITY must be ' + ','.join(['all','phx','other','sf'])
+
 
     if args.MODE == 'train':
         args.TEST_SEQ_LEN = args.SEQ_LEN

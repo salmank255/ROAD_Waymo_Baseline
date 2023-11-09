@@ -388,7 +388,28 @@ class VideoDataset(tutils.data.Dataset):
                 self.SUBSETS = ['test']
             elif self.DATASET == 'road_waymo':
                 self.SUBSETS = ['test']
-    
+
+        if args.CITY == 'all':
+            self.TRAIN_CITY = ['location_phx','location_other','location_sf']
+        elif args.CITY == 'phx':
+            self.TRAIN_CITY = ['location_phx']
+        elif args.CITY == 'other':
+            self.TRAIN_CITY = ['location_other']
+        elif args.CITY == 'sf':
+            self.TRAIN_CITY = ['location_sf']
+
+
+        if args.TEST_CITY == 'all':
+            self.TEST_CITY = ['location_phx','location_other','location_sf']
+        elif args.TEST_CITY == 'phx':
+            self.TEST_CITY = ['location_phx']
+        elif args.TEST_CITY == 'other':
+            self.TEST_CITY = ['location_other']
+        elif args.TEST_CITY == 'sf':
+            self.TEST_CITY = ['location_sf']
+
+
+
         self.SEQ_LEN = args.SEQ_LEN
         self.BATCH_SIZE = args.BATCH_SIZE
         self.MIN_SEQ_STEP = args.MIN_SEQ_STEP
@@ -613,8 +634,10 @@ class VideoDataset(tutils.data.Dataset):
         
         if self.MODE =='train' or self.TEST_SUBSETS == ['val']:
             self.anno_file  = os.path.join(self.root, 'road_waymo_trainval_v1.0.json')
+            Cities = self.TRAIN_CITY
         else:
             self.anno_file  = os.path.join(self.root, 'road_waymo_test_v1.0.json')
+            Cities = self.TEST_CITY
         with open(self.anno_file,'r') as fff:
             final_annots = json.load(fff)
         
@@ -649,100 +672,103 @@ class VideoDataset(tutils.data.Dataset):
         # vidnames = sorted(database.keys())
         # vidnames = vidnames[:650]
         # for videoname in vidnames:
-        for videoname in sorted(database.keys()):
-            # print(is_part_of_subsets(final_annots['db'][videoname]['split_ids'], self.SUBSETS))
-            if not is_part_of_subsets(final_annots['db'][videoname]['split_ids'], self.SUBSETS):
-                continue
-            
-            numf = database[videoname]['numf']
-            self.numf_list.append(numf)
-            self.video_list.append(videoname)
-            
-            frames = database[videoname]['frames']
-            # print(numf)
-            frame_level_annos = [ {'labeled':False,'ego_label':-1,'boxes':np.asarray([]),'labels':np.asarray([])} for _ in range(numf)]
+        for city in Cities:
+            for videoname in sorted(database.keys()):
+                # print(is_part_of_subsets(final_annots['db'][videoname]['split_ids'], self.SUBSETS))
+                if not is_part_of_subsets(final_annots['db'][videoname]['split_ids'], self.SUBSETS):
+                    continue
+                if final_annots['db'][videoname]['location'] != city:
+                    continue
 
-            frame_nums = [int(f) for f in frames.keys()]
-            frames_with_boxes = 0
-            for frame_num in sorted(frame_nums): #loop from start to last possible frame which can make a legit sequence
-                frame_id = str(frame_num)
-                if frame_id in frames.keys() and frames[frame_id]['annotated']>0:
-                    
-                    frame_index = frame_num-1  
-                    frame_level_annos[frame_index]['labeled'] = True 
-                    if len(frames[frame_id]['av_action_ids']) == 0:
-                        frame_level_annos[frame_index]['ego_label'] = 0
-                    elif frames[frame_id]['av_action_ids'][0] >5:
-                        frame_level_annos[frame_index]['ego_label'] = 0
-                    else:
-                        frame_level_annos[frame_index]['ego_label'] = frames[frame_id]['av_action_ids'][0]
-                    
-                    frame = frames[frame_id]
-                    if 'annos' not in frame.keys():
-                        frame = {'annos':{}}
-                    
-                    all_boxes = []
-                    all_labels = []
-                    frame_annos = frame['annos']
-                    # temp_img = cv2.imread('../roadpp/rgb-images/'+videoname+'/{:05d}.jpg'.format(frame_num))
-                    for key in frame_annos:
-                        width, height = frame['width'], frame['height']
-                        anno = frame_annos[key]
-                        box = anno['box']
+                numf = database[videoname]['numf']
+                self.numf_list.append(numf)
+                self.video_list.append(videoname)
+                
+                frames = database[videoname]['frames']
+                # print(numf)
+                frame_level_annos = [ {'labeled':False,'ego_label':-1,'boxes':np.asarray([]),'labels':np.asarray([])} for _ in range(numf)]
+
+                frame_nums = [int(f) for f in frames.keys()]
+                frames_with_boxes = 0
+                for frame_num in sorted(frame_nums): #loop from start to last possible frame which can make a legit sequence
+                    frame_id = str(frame_num)
+                    if frame_id in frames.keys() and frames[frame_id]['annotated']>0:
                         
-                        assert box[0]<box[2] and box[1]<box[3], str(box)+videoname+str(frame_num)
-                        assert width==1920 and height==1280, (width, height, box) # for ROAD ++
+                        frame_index = frame_num-1  
+                        frame_level_annos[frame_index]['labeled'] = True 
+                        if len(frames[frame_id]['av_action_ids']) == 0:
+                            frame_level_annos[frame_index]['ego_label'] = 0
+                        elif frames[frame_id]['av_action_ids'][0] >5:
+                            frame_level_annos[frame_index]['ego_label'] = 0
+                        else:
+                            frame_level_annos[frame_index]['ego_label'] = frames[frame_id]['av_action_ids'][0]
                         
-                        # temp_img = cv2.rectangle(temp_img, (int(box[0]*1920),int(box[1]*1280)), (int(box[2]*1920),int(box[3]*1280)), (255,0,0), 2)
-                        # cv2.imwrite('temp_img.png',temp_img)
-                        for bi in range(4):
-                            assert 0<=box[bi]<=1.01, box
-                            box[bi] = min(1.0, max(0, box[bi]))
+                        frame = frames[frame_id]
+                        if 'annos' not in frame.keys():
+                            frame = {'annos':{}}
                         
-                        all_boxes.append(box)
-                        box_labels = np.zeros(self.num_classes)
-                        list_box_labels = []
-                        cc = 1
-                        for idx, name in enumerate(self.label_types):
-                            # print(idx,name)
-                            filtered_ids = filter_labels(anno[name+'_ids'], final_annots['all_'+name+'_labels'], self.used_labels[name+'_labels'])
-                            list_box_labels.append(filtered_ids)
-                            for fid in filtered_ids:
-                                box_labels[fid+cc] = 1
-                                box_labels[0] = 1
-                            cc += self.num_classes_list[idx+1]
+                        all_boxes = []
+                        all_labels = []
+                        frame_annos = frame['annos']
+                        # temp_img = cv2.imread('../roadpp/rgb-images/'+videoname+'/{:05d}.jpg'.format(frame_num))
+                        for key in frame_annos:
+                            width, height = frame['width'], frame['height']
+                            anno = frame_annos[key]
+                            box = anno['box']
+                            
+                            assert box[0]<box[2] and box[1]<box[3], str(box)+videoname+str(frame_num)
+                            assert width==1920 and height==1280, (width, height, box) # for ROAD ++
+                            
+                            # temp_img = cv2.rectangle(temp_img, (int(box[0]*1920),int(box[1]*1280)), (int(box[2]*1920),int(box[3]*1280)), (255,0,0), 2)
+                            # cv2.imwrite('temp_img.png',temp_img)
+                            for bi in range(4):
+                                assert 0<=box[bi]<=1.01, box
+                                box[bi] = min(1.0, max(0, box[bi]))
+                            
+                            all_boxes.append(box)
+                            box_labels = np.zeros(self.num_classes)
+                            list_box_labels = []
+                            cc = 1
+                            for idx, name in enumerate(self.label_types):
+                                # print(idx,name)
+                                filtered_ids = filter_labels(anno[name+'_ids'], final_annots['all_'+name+'_labels'], self.used_labels[name+'_labels'])
+                                list_box_labels.append(filtered_ids)
+                                for fid in filtered_ids:
+                                    box_labels[fid+cc] = 1
+                                    box_labels[0] = 1
+                                cc += self.num_classes_list[idx+1]
 
-                        all_labels.append(box_labels)
+                            all_labels.append(box_labels)
 
-                        # for box_labels in all_labels:
-                        for k, bls in enumerate(list_box_labels):
-                            for l in bls:
-                                counts[l, k] += 1 
-                    # print(videoname,frame_num)
-                    # print(rr)
-                    all_labels = np.asarray(all_labels, dtype=np.float32)
-                    all_boxes = np.asarray(all_boxes, dtype=np.float32)
+                            # for box_labels in all_labels:
+                            for k, bls in enumerate(list_box_labels):
+                                for l in bls:
+                                    counts[l, k] += 1 
+                        # print(videoname,frame_num)
+                        # print(rr)
+                        all_labels = np.asarray(all_labels, dtype=np.float32)
+                        all_boxes = np.asarray(all_boxes, dtype=np.float32)
 
-                    if all_boxes.shape[0]>0:
-                        frames_with_boxes += 1    
-                    frame_level_annos[frame_index]['labels'] = all_labels
-                    frame_level_annos[frame_index]['boxes'] = all_boxes
+                        if all_boxes.shape[0]>0:
+                            frames_with_boxes += 1    
+                        frame_level_annos[frame_index]['labels'] = all_labels
+                        frame_level_annos[frame_index]['boxes'] = all_boxes
 
-            logger.info('Frames with Boxes are {:d} out of {:d} in {:s}'.format(frames_with_boxes, numf, videoname))
-            frame_level_list.append(frame_level_annos)  
+                logger.info('Frames with Boxes are {:d} out of {:d} in {:s}'.format(frames_with_boxes, numf, videoname))
+                frame_level_list.append(frame_level_annos)  
 
-            ## make ids
-            start_frames = [f for f in range(numf-self.MIN_SEQ_STEP*self.SEQ_LEN, 1,  -self.skip_step)]
-            if self.full_test and 1 not in start_frames:
-                start_frames.append(1)
-            logger.info('number of start frames: '+ str(len(start_frames)))
-            for frame_num in start_frames:
-                step_list = [s for s in range(self.MIN_SEQ_STEP, self.MAX_SEQ_STEP+1) if numf-s*self.SEQ_LEN>=frame_num]
-                shuffle(step_list)
-                # print(len(step_list), self.num_steps)
-                for s in range(min(self.num_steps, len(step_list))):
-                    video_id = self.video_list.index(videoname)
-                    self.ids.append([video_id, frame_num ,step_list[s]])
+                ## make ids
+                start_frames = [f for f in range(numf-self.MIN_SEQ_STEP*self.SEQ_LEN, 1,  -self.skip_step)]
+                if self.full_test and 1 not in start_frames:
+                    start_frames.append(1)
+                logger.info('number of start frames: '+ str(len(start_frames)))
+                for frame_num in start_frames:
+                    step_list = [s for s in range(self.MIN_SEQ_STEP, self.MAX_SEQ_STEP+1) if numf-s*self.SEQ_LEN>=frame_num]
+                    shuffle(step_list)
+                    # print(len(step_list), self.num_steps)
+                    for s in range(min(self.num_steps, len(step_list))):
+                        video_id = self.video_list.index(videoname)
+                        self.ids.append([video_id, frame_num ,step_list[s]])
         # pdb.set_trace()
         ptrstr = ''
         self.frame_level_list = frame_level_list
