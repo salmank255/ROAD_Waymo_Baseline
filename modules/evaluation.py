@@ -252,26 +252,17 @@ def get_gt_tubes_ucf(final_annots, subset, label_type):
     return video_list, tubes
 
 
-def get_gt_tubes(final_annots, subset, label_type, dataset):
+def get_gt_tubes(video_list,final_annots, subset, label_type, dataset):
     """Get video list form ground truth videos used in subset 
     and their ground truth tubes """
 
-    video_list = []
     tubes = {}
-    for videoname in final_annots['db']:
-        if dataset == 'road' or dataset == 'roadpp' or dataset== 'road_waymo':
-            cond = is_part_of_subsets(final_annots['db'][videoname]['split_ids'], [subset])
-        else:
-            cond = videoname not in final_annots['trainvideos']
-        if cond:
-            video_list.append(videoname)
-            if dataset == 'road' or dataset == 'roadpp' or dataset=='road_waymo':
-                tubes[videoname] = get_filtered_tubes(
-                    label_type+'_tubes', final_annots, videoname)
-            else:
-                tubes[videoname] = get_filtered_tubes_ucf24(final_annots['db'][videoname]['annotations'])
+    for videoname in video_list:
+        tubes[videoname] = get_filtered_tubes(label_type+'_tubes', final_annots, videoname)
+    return tubes
 
-    return video_list, tubes
+
+
 
 
 def get_det_class_tubes(tubes, cl_id):
@@ -352,7 +343,7 @@ def compute_class_ap(class_dets, class_gts, match_func, iou_thresh, metric_type=
     return class_ap, num_postives, count, pr[count+1, 1]
 
 
-def evaluate_tubes(anno_file, det_file,  subset='val_3', dataset='road', iou_thresh=0.2, metric_type='stiou'):
+def evaluate_tubes(video_list,anno_file, det_file,  subset='val_3', dataset='road', iou_thresh=0.2, metric_type='stiou'):
 
     logger.info('Evaluating tubes for datasets '+ dataset)
     logger.info('GT FILE:: '+ anno_file)
@@ -393,7 +384,7 @@ def evaluate_tubes(anno_file, det_file,  subset='val_3', dataset='road', iou_thr
         re_all = []
         ap_strs = []
         sap = 0.0
-        video_list, gt_tubes = get_gt_tubes(final_annots, subset, label_type, dataset)
+        gt_tubes = get_gt_tubes(video_list,final_annots, subset, label_type, dataset)
         det_tubes = {}
         
         for videoname in video_list:

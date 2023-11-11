@@ -45,8 +45,9 @@ def build_eval_tubes(args, val_dataset):
         tt0 = time.perf_counter()
         log_file.write('Building tubes......\n')
         
-        
+
         paths = perform_building(args, val_dataset.video_list, epoch)
+
         childs = []
         if args.JOINT_4M_MARGINALS:
             childs = val_dataset.childs
@@ -72,7 +73,7 @@ def build_eval_tubes(args, val_dataset):
                 for subset in args.SUBSETS:
                     if len(subset)<2:
                         continue
-                    sresults = evaluate_tubes(val_dataset.anno_file, tube_file, dataset=args.DATASET, subset=subset, iou_thresh=TUBES_EVAL_THRESH, metric_type=metric_type)
+                    sresults = evaluate_tubes(val_dataset.video_list, val_dataset.anno_file, tube_file, dataset=args.DATASET, subset=subset, iou_thresh=TUBES_EVAL_THRESH, metric_type=metric_type)
                     for _, label_type in enumerate(args.label_types[1:]):
                         name = subset + ' & ' + label_type
                         rstr = '\n\nResults for {:s} @ {:0.02f} {:s}\n'.format(name, TUBES_EVAL_THRESH, metric_type)
@@ -112,6 +113,7 @@ def build_eval_tubes(args, val_dataset):
                     table += '|\n'
                 logger.info(table) 
         log_file.close()
+        print(ff)
 
 def build_eval_tubes_roadpp(args, val_road_dataset,val_road_waymo_dataset):
     for epoch in args.EVAL_EPOCHS:
@@ -178,7 +180,7 @@ def build_eval_tubes_roadpp(args, val_road_dataset,val_road_waymo_dataset):
                         continue
                     sresults_ls = []
                     for val_dataset in [val_road_dataset,val_road_waymo_dataset]:
-                        sresults = evaluate_tubes(val_dataset.anno_file, tube_file, dataset=args.DATASET, subset=subset, iou_thresh=TUBES_EVAL_THRESH, metric_type=metric_type)
+                        sresults = evaluate_tubes(val_dataset.video_list,val_dataset.anno_file, tube_file, dataset=args.DATASET, subset=subset, iou_thresh=TUBES_EVAL_THRESH, metric_type=metric_type)
                         sresults_ls.append(sresults)
 
                     for _, label_type in enumerate(args.label_types[1:]):
