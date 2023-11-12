@@ -113,7 +113,6 @@ def build_eval_tubes(args, val_dataset):
                     table += '|\n'
                 logger.info(table) 
         log_file.close()
-        print(ff)
 
 def build_eval_tubes_roadpp(args, val_road_dataset,val_road_waymo_dataset):
     for epoch in args.EVAL_EPOCHS:
