@@ -89,17 +89,22 @@ CUDA_VISIBLE_DEVICES=2 python main.py ../ ../ kinetics-pt/ --MODE=train --ARCH=r
 
 
 Cities Experiments -- Testing
+
 road
-CUDA_VISIBLE_DEVICES=0 python main.py ../ ../ kinetics-pt/ --MODE=gen_dets --ARCH=resnet50 --MODEL_TYPE=I3D --DATASET=road_waymo --TEST_DATASET=road --CITY=phx --TEST_CITY=all --TRAIN_SUBSETS=train --VAL_SUBSETS=test --TEST_SUBSETS=test --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=4 --LR=0.0041 --MIN_SIZE=600
-CUDA_VISIBLE_DEVICES=3 python main.py ../ ../ kinetics-pt/ --MODE=gen_dets --ARCH=resnet50 --MODEL_TYPE=I3D --DATASET=road_waymo --TEST_DATASET=road --CITY=other --TEST_CITY=all --TRAIN_SUBSETS=train --VAL_SUBSETS=test --TEST_SUBSETS=test --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=4 --LR=0.0041 --MIN_SIZE=600
-CUDA_VISIBLE_DEVICES=3 python main.py ../ ../ kinetics-pt/ --MODE=gen_dets --ARCH=resnet50 --MODEL_TYPE=I3D --DATASET=road_waymo --TEST_DATASET=road --CITY=sf --TEST_CITY=all --TRAIN_SUBSETS=train --VAL_SUBSETS=test --TEST_SUBSETS=test --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=4 --LR=0.0041 --MIN_SIZE=600
+CUDA_VISIBLE_DEVICES=1 python main.py ../ ../ kinetics-pt/ --MODE=gen_dets --ARCH=resnet50 --MODEL_TYPE=I3D --DATASET=road --TEST_DATASET=road_waymo --CITY=all --TEST_CITY=phx --TRAIN_SUBSETS=train --VAL_SUBSETS=test --TEST_SUBSETS=test --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=8 --LR=0.0041 --MIN_SIZE=600
+CUDA_VISIBLE_DEVICES=1 python main.py ../ ../ kinetics-pt/ --MODE=gen_dets --ARCH=resnet50 --MODEL_TYPE=I3D --DATASET=road --TEST_DATASET=road_waymo --CITY=all --TEST_CITY=other --TRAIN_SUBSETS=train --VAL_SUBSETS=test --TEST_SUBSETS=test --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=7 --LR=0.0041 --MIN_SIZE=600
+CUDA_VISIBLE_DEVICES=1 python main.py ../ ../ kinetics-pt/ --MODE=gen_dets --ARCH=resnet50 --MODEL_TYPE=I3D --DATASET=road --TEST_DATASET=road_waymo --CITY=all --TEST_CITY=sf --TRAIN_SUBSETS=train --VAL_SUBSETS=test --TEST_SUBSETS=test --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=7 --LR=0.0041 --MIN_SIZE=600
+
+road_waymo
+CUDA_VISIBLE_DEVICES=2 python main.py ../ ../ kinetics-pt/ --MODE=gen_dets --ARCH=resnet50 --MODEL_TYPE=I3D --DATASET=road_waymo --TEST_DATASET=road_waymo --CITY=all --TEST_CITY=phx --TRAIN_SUBSETS=train --VAL_SUBSETS=test --TEST_SUBSETS=test --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=8 --LR=0.0041 --MIN_SIZE=600
+CUDA_VISIBLE_DEVICES=1 python main.py ../ ../ kinetics-pt/ --MODE=gen_dets --ARCH=resnet50 --MODEL_TYPE=I3D --DATASET=road_waymo --TEST_DATASET=road_waymo --CITY=all --TEST_CITY=other --TRAIN_SUBSETS=train --VAL_SUBSETS=test --TEST_SUBSETS=test --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=7 --LR=0.0041 --MIN_SIZE=600
+CUDA_VISIBLE_DEVICES=1 python main.py ../ ../ kinetics-pt/ --MODE=gen_dets --ARCH=resnet50 --MODEL_TYPE=I3D --DATASET=road_waymo --TEST_DATASET=road_waymo --CITY=all --TEST_CITY=sf --TRAIN_SUBSETS=train --VAL_SUBSETS=test --TEST_SUBSETS=test --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=7 --LR=0.0041 --MIN_SIZE=600
+
+roadpp
+CUDA_VISIBLE_DEVICES=2 python main.py ../ ../ kinetics-pt/ --MODE=gen_dets --ARCH=resnet50 --MODEL_TYPE=I3D --DATASET=roadpp --TEST_DATASET=road_waymo --CITY=all --TEST_CITY=phx --TRAIN_SUBSETS=train --VAL_SUBSETS=test --TEST_SUBSETS=test --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=8 --LR=0.0041 --MIN_SIZE=600
+CUDA_VISIBLE_DEVICES=1 python main.py ../ ../ kinetics-pt/ --MODE=gen_dets --ARCH=resnet50 --MODEL_TYPE=I3D --DATASET=roadpp --TEST_DATASET=road_waymo --CITY=all --TEST_CITY=other --TRAIN_SUBSETS=train --VAL_SUBSETS=test --TEST_SUBSETS=test --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=7 --LR=0.0041 --MIN_SIZE=600
+CUDA_VISIBLE_DEVICES=2 python main.py ../ ../ kinetics-pt/ --MODE=gen_dets --ARCH=resnet50 --MODEL_TYPE=I3D --DATASET=roadpp --TEST_DATASET=road_waymo --CITY=all --TEST_CITY=sf --TRAIN_SUBSETS=train --VAL_SUBSETS=test --TEST_SUBSETS=test --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=7 --LR=0.0041 --MIN_SIZE=600
 
 
-phx
 
-
-other
-
-
-sf
 
