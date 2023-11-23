@@ -9,7 +9,7 @@ import argparse
 import numpy as np
 from modules import utils
 from train import train
-from data import VideoDataset
+from data.nuscene_loader import VideoDataset
 from torchvision import transforms
 import data.transforms as vtf
 from models.retinanet import build_retinanet
@@ -25,8 +25,8 @@ def str2bool(v):
 
 def set_out_video(video_name):
     fps = 12
-    video_width = 1280
-    video_height = 960
+    video_width = 1600
+    video_height = 900
     size = (video_width, video_height)
     fourcc = cv2.VideoWriter_fourcc(*"XVID")
     video = cv2.VideoWriter(video_name, fourcc, fps, size)
@@ -38,7 +38,8 @@ def main():
     parser.add_argument('DATA_PATH', help='Location to root directory for dataset reading') # /mnt/mars-fast/datasets/
     parser.add_argument('SAVE_PATH', help='Location to root directory for saving checkpoint models') # /mnt/mars-alpha/
     parser.add_argument('MODEL_PATH',help='Location to root directory where kinetics pretrained models are stored')
-    
+    parser.add_argument('--MODE', default='gen_det',
+                        help='MODE can be train, gen_dets, eval_frames, eval_tubes define SUBSETS accordingly, build tubes')
     # Name of backbone network, e.g. resnet18, resnet34, resnet50, resnet101 resnet152 are supported
     parser.add_argument('--ARCH', default='resnet50', 
                         type=str, help=' base arch')
@@ -65,11 +66,15 @@ def main():
     parser.add_argument('--REG_HEAD_TIME_SIZE', default=3,
                     type=int, help='Temporal kernel size of regression head')
     
+        #  Name of the dataset only voc or coco are supported
+    parser.add_argument('--Domain_Adaptation', default=False, 
+                        type=str2bool,help='Domain Adaptation')
+    parser.add_argument('--DATASET', default='road', 
+                        type=str,help='dataset being used')
+
     # Input size of image only 600 is supprted at the moment 
     parser.add_argument('--MIN_SIZE', default=600, 
                         type=int, help='Input Size for FPN')
-    parser.add_argument('--MAX_SIZE', default=1280, 
-                        type=int, help='Input Size for FPN')  
     #  data loading argumnets
     parser.add_argument('-b','--BATCH_SIZE', default=4, 
                         type=int, help='Batch size for training')
@@ -179,7 +184,12 @@ def main():
     ## Parse arguments
     args = parser.parse_args()
     
-    args = utils.set_args(args) # set directories and SUBSETS fo datasets
+    args.model_subtype = args.MODEL_TYPE.split('-')[0]
+    args.MAX_SIZE = int(args.MIN_SIZE*1.40)
+
+    vid_save_path = args.MODEL_PATH.split("/")[1]+"_"+os.path.split(args.MODEL_PATH)[-1][:-39]
+
+    # args = utils.set_args(args) # set directories and SUBSETS fo datasets
     args.MULTI_GPUS = False if args.BATCH_SIZE == 1 else args.MULTI_GPUS
     ## set random seeds and global settings
     np.random.seed(args.MAN_SEED)
@@ -187,16 +197,16 @@ def main():
     # torch.cuda.manual_seed_all(args.MAN_SEED)
     torch.set_default_tensor_type('torch.FloatTensor')
 
-    args = utils.create_exp_name(args)
+    # args = utils.create_exp_name(args)
 
-    utils.setup_logger(args)
-    logger = utils.get_logger(__name__)
-    logger.info(sys.version)
+    # utils.setup_logger(args)
+    # logger = utils.get_logger(__name__)
+    # logger.info(sys.version)
 
 
     args.SEQ_LEN = args.TEST_SEQ_LEN
     args.MAX_SEQ_STEP = 1
-    args.SUBSETS = args.TEST_SUBSETS
+    # args.SUBSETS = args.TEST_SUBSETS
     full_test = True #args.MODE != 'train'
     args.skip_beggning = 0
     args.skip_ending = 0
@@ -212,11 +222,11 @@ def main():
     val_transform = transforms.Compose([ 
                         vtf.ResizeClip_Fixed(args.MIN_SIZE, args.MAX_SIZE),
                         vtf.ToTensorStack(),
-                        vtf.Normalize(mean=args.MEANS,std=args.STDS)])
+                        vtf.Normalize(mean=[0.485, 0.456, 0.406],std=[0.229, 0.224, 0.225])])
 
 
-    val_dataset = VideoDataset(args, transform=val_transform, skip_step=skip_step, full_test=full_test)
-    logger.info('Done Loading Dataset Validation Dataset')
+    val_dataset = VideoDataset(args, transform=val_transform, full_test=full_test)
+    print('Done Loading Dataset Validation Dataset')
 
 
     args.num_classes =  val_dataset.num_classes
@@ -228,27 +238,29 @@ def main():
     args.num_ego_classes = val_dataset.num_ego_classes
     args.ego_classes = val_dataset.ego_classes
     args.head_size = 256
-    # olympia_classes = val_dataset.olympia_classes
 
-    if args.MODE in ['train', 'val','test','gen_dets']:
-        net = build_retinanet(args).cuda()
-        logger.info('\nLets do dataparallel\n')
-        net = torch.nn.DataParallel(net)
+
+
+
+
+    net = build_retinanet(args).cuda()
+    net = torch.nn.DataParallel(net)
 
 
     net.eval()
-    args.MODEL_PATH = args.SAVE_ROOT + 'model_{:06d}.pth'.format(args.EVAL_EPOCHS[0])
-    logger.info('Loaded model from :: '+args.MODEL_PATH)
+    args.MODEL_PATH = args.MODEL_PATH + '/model_000030.pth'
+    print('Loaded model from :: '+args.MODEL_PATH)
     net.load_state_dict(torch.load(args.MODEL_PATH))
+    
+
 
     val_data_loader = data_utils.DataLoader(val_dataset, 1, num_workers=args.NUM_WORKERS,
                                             shuffle=False, pin_memory=True)
 
-    video = set_out_video('ROAD_test_vid_'+str(args.GEN_CONF_THRESH)+'_.MP4')
+    video = set_out_video(args.SAVE_PATH+'/'+vid_save_path+"_"+str(args.GEN_CONF_THRESH)+'_.MP4')
     activation = torch.nn.Sigmoid().cuda()
     with torch.no_grad():
         for val_itr, (images,img_names) in enumerate(val_data_loader):
-
             
             print(val_itr)
             images = images.cuda(0, non_blocking=True)
@@ -259,9 +271,12 @@ def main():
                 numc = args.num_classes_list[nlt]
                 det_boxes.append([[] for _ in range(numc)])
             for s in range(args.SEQ_LEN):
-                image = cv2.imread(img_names[0][s])
+                # print(img_names[s])
+                image = cv2.imread(img_names[s][0])
                 # image = cv2.resize(image,(width,height))
                 org_height,org_width = image.shape[:2]
+                # print(org_height,org_width)
+                # print(wh)
                 decoded_boxes_frame = decoded_boxes[0, s].clone()
                 cc = 0
 
@@ -307,10 +322,10 @@ def main():
                     # print(loc_lab)
                     # print(dup_lab)
                     # print(trip_lab)
-                    bbox[0] = (bbox[0]/682)*org_width # width x1
-                    bbox[2] = (bbox[2]/682)*org_width # width x2
-                    bbox[1] = (bbox[1]/512)*org_height # height y1
-                    bbox[3] = (bbox[3]/512)*org_height # height y2
+                    bbox[0] = (bbox[0]/int(args.MAX_SIZE))*org_width # width x1
+                    bbox[2] = (bbox[2]/int(args.MAX_SIZE))*org_width # width x2
+                    bbox[1] = (bbox[1]/int(args.MIN_SIZE))*org_height # height y1
+                    bbox[3] = (bbox[3]/int(args.MIN_SIZE))*org_height # height y2
 
                     cv2.rectangle(image, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])), (0, 0, 255), 2)
                     cv2.putText(image, agent_lab, (int(bbox[0]), int(bbox[3]+20)), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (11,12,255), 2)
