@@ -24,7 +24,7 @@ def str2bool(v):
 
 
 def set_out_video(video_name):
-    fps = 12
+    fps = 8
     video_width = 1600
     video_height = 900
     size = (video_width, video_height)
@@ -306,17 +306,17 @@ def main():
                     else:
                         loc_lab = ''
 
-                    dup_lab_ind = max(ppred[46:85])
-                    if dup_lab_ind > args.GEN_CONF_THRESH:
-                        dup_lab = args.all_classes[4][np.argmax(ppred[46:85])]
-                    else:
-                        dup_lab = ''
+                    # dup_lab_ind = max(ppred[46:85])
+                    # if dup_lab_ind > args.GEN_CONF_THRESH:
+                    #     dup_lab = args.all_classes[4][np.argmax(ppred[46:85])]
+                    # else:
+                    #     dup_lab = ''
 
-                    trip_lab_ind = max(ppred[85:153])
-                    if trip_lab_ind > args.GEN_CONF_THRESH:
-                        trip_lab = args.all_classes[5][np.argmax(ppred[85:153])]
-                    else:
-                        trip_lab = ''
+                    # trip_lab_ind = max(ppred[85:153])
+                    # if trip_lab_ind > args.GEN_CONF_THRESH:
+                    #     trip_lab = args.all_classes[5][np.argmax(ppred[85:153])]
+                    # else:
+                    #     trip_lab = ''
                     # print(agent_lab)
                     # print(action_lab)
                     # print(loc_lab)
@@ -331,8 +331,8 @@ def main():
                     cv2.putText(image, agent_lab, (int(bbox[0]), int(bbox[3]+20)), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (11,12,255), 2)
                     cv2.putText(image, action_lab, (int(bbox[0]), int(bbox[3]+40)), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (11,12,255), 2)
                     cv2.putText(image, loc_lab, (int(bbox[0]), int(bbox[3]+60)), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (11,12,255), 2)
-                    cv2.putText(image, dup_lab, (int(bbox[0]), int(bbox[3]+80)), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (11,12,255), 2)
-                    cv2.putText(image, trip_lab, (int(bbox[0]), int(bbox[3]+100)), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (11,12,255), 2)
+                    # cv2.putText(image, dup_lab, (int(bbox[0]), int(bbox[3]+80)), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (11,12,255), 2)
+                    # cv2.putText(image, trip_lab, (int(bbox[0]), int(bbox[3]+100)), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (11,12,255), 2)
 
                 video.write(image)
     video.release()

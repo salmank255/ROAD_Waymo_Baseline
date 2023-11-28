@@ -111,7 +111,7 @@ CUDA_VISIBLE_DEVICES=2 python main.py ../ ../ kinetics-pt/ --MODE=gen_dets --ARC
 Inference:
 
 I3D/roadpp...
-CUDA_VISIBLE_DEVICES=0 python inference.py ../NuScene/samples/CAM_FRONT ../NuScene ../roadpp/cache/resnet50I3D600-Pkinetics-b8s8x1x1-roadpp-alltn-h3x3x3 --ARCH=resnet50 --MODEL_TYPE=I3D --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=8 --LR=0.0041 --MIN_SIZE=600 --GEN_CONF_THRESH=0.5
+CUDA_VISIBLE_DEVICES=1 python inference.py ../NuScene/samples/CAM_FRONT ../NuScene ../roadpp/cache/resnet50I3D600-Pkinetics-b8s8x1x1-roadpp-alltn-h3x3x3 --ARCH=resnet50 --MODEL_TYPE=I3D --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=8 --LR=0.0041 --MIN_SIZE=600 --GEN_CONF_THRESH=0.5
 CUDA_VISIBLE_DEVICES=1 python inference.py ../NuScene/samples/CAM_FRONT ../NuScene ../roadpp/cache/resnet50I3D600-Pkinetics-b8s8x1x1-roadpp-alltn-h3x3x3 --ARCH=resnet50 --MODEL_TYPE=I3D --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=8 --LR=0.0041 --MIN_SIZE=600 --GEN_CONF_THRESH=0.4
 CUDA_VISIBLE_DEVICES=2 python inference.py ../NuScene/samples/CAM_FRONT ../NuScene ../roadpp/cache/resnet50I3D600-Pkinetics-b8s8x1x1-roadpp-alltn-h3x3x3 --ARCH=resnet50 --MODEL_TYPE=I3D --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=8 --LR=0.0041 --MIN_SIZE=600 --GEN_CONF_THRESH=0.35
 CUDA_VISIBLE_DEVICES=3 python inference.py ../NuScene/samples/CAM_FRONT ../NuScene ../roadpp/cache/resnet50I3D600-Pkinetics-b8s8x1x1-roadpp-alltn-h3x3x3 --ARCH=resnet50 --MODEL_TYPE=I3D --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=8 --LR=0.0041 --MIN_SIZE=600 --GEN_CONF_THRESH=0.3
@@ -119,7 +119,7 @@ CUDA_VISIBLE_DEVICES=1 python inference.py ../NuScene/samples/CAM_FRONT ../NuSce
 CUDA_VISIBLE_DEVICES=2 python inference.py ../NuScene/samples/CAM_FRONT ../NuScene ../roadpp/cache/resnet50I3D600-Pkinetics-b8s8x1x1-roadpp-alltn-h3x3x3 --ARCH=resnet50 --MODEL_TYPE=I3D --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=8 --LR=0.0041 --MIN_SIZE=600 --GEN_CONF_THRESH=0.2
 
 I3D/road...
-CUDA_VISIBLE_DEVICES=0 python inference.py ../NuScene/samples/CAM_FRONT ../NuScene ../road/cache/resnet50I3D600-Pkinetics-b8s8x1x1-road-alltn-h3x3x3 --ARCH=resnet50 --MODEL_TYPE=I3D --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=8 --LR=0.0041 --MIN_SIZE=600 --GEN_CONF_THRESH=0.5
+CUDA_VISIBLE_DEVICES=2 python inference.py ../NuScene/samples/CAM_FRONT ../NuScene ../road/cache/resnet50I3D600-Pkinetics-b8s8x1x1-road-alltn-h3x3x3 --ARCH=resnet50 --MODEL_TYPE=I3D --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=8 --LR=0.0041 --MIN_SIZE=600 --GEN_CONF_THRESH=0.5
 CUDA_VISIBLE_DEVICES=1 python inference.py ../NuScene/samples/CAM_FRONT ../NuScene ../road/cache/resnet50I3D600-Pkinetics-b8s8x1x1-road-alltn-h3x3x3 --ARCH=resnet50 --MODEL_TYPE=I3D --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=8 --LR=0.0041 --MIN_SIZE=600 --GEN_CONF_THRESH=0.4
 CUDA_VISIBLE_DEVICES=2 python inference.py ../NuScene/samples/CAM_FRONT ../NuScene ../road/cache/resnet50I3D600-Pkinetics-b8s8x1x1-road-alltn-h3x3x3 --ARCH=resnet50 --MODEL_TYPE=I3D --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=8 --LR=0.0041 --MIN_SIZE=600 --GEN_CONF_THRESH=0.35
 CUDA_VISIBLE_DEVICES=3 python inference.py ../NuScene/samples/CAM_FRONT ../NuScene ../road/cache/resnet50I3D600-Pkinetics-b8s8x1x1-road-alltn-h3x3x3 --ARCH=resnet50 --MODEL_TYPE=I3D --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=8 --LR=0.0041 --MIN_SIZE=600 --GEN_CONF_THRESH=0.3
@@ -128,7 +128,7 @@ CUDA_VISIBLE_DEVICES=2 python inference.py ../NuScene/samples/CAM_FRONT ../NuSce
 
 
 I3D/road_waymo...
-CUDA_VISIBLE_DEVICES=0 python inference.py ../NuScene/samples/CAM_FRONT ../NuScene ../road_waymo/cache/resnet50I3D600-Pkinetics-b8s8x1x1-road_waymo-alltn-h3x3x3 --ARCH=resnet50 --MODEL_TYPE=I3D --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=8 --LR=0.0041 --MIN_SIZE=600 --GEN_CONF_THRESH=0.5
+CUDA_VISIBLE_DEVICES=3 python inference.py ../NuScene/samples/CAM_FRONT ../NuScene ../road_waymo/cache/resnet50I3D600-Pkinetics-b8s8x1x1-road_waymo-alltn-h3x3x3 --ARCH=resnet50 --MODEL_TYPE=I3D --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=8 --LR=0.0041 --MIN_SIZE=600 --GEN_CONF_THRESH=0.5
 CUDA_VISIBLE_DEVICES=1 python inference.py ../NuScene/samples/CAM_FRONT ../NuScene ../road_waymo/cache/resnet50I3D600-Pkinetics-b8s8x1x1-road_waymo-alltn-h3x3x3 --ARCH=resnet50 --MODEL_TYPE=I3D --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=8 --LR=0.0041 --MIN_SIZE=600 --GEN_CONF_THRESH=0.4
 CUDA_VISIBLE_DEVICES=2 python inference.py ../NuScene/samples/CAM_FRONT ../NuScene ../road_waymo/cache/resnet50I3D600-Pkinetics-b8s8x1x1-road_waymo-alltn-h3x3x3 --ARCH=resnet50 --MODEL_TYPE=I3D --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=8 --LR=0.0041 --MIN_SIZE=600 --GEN_CONF_THRESH=0.35
 CUDA_VISIBLE_DEVICES=3 python inference.py ../NuScene/samples/CAM_FRONT ../NuScene ../road_waymo/cache/resnet50I3D600-Pkinetics-b8s8x1x1-road_waymo-alltn-h3x3x3 --ARCH=resnet50 --MODEL_TYPE=I3D --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=8 --LR=0.0041 --MIN_SIZE=600 --GEN_CONF_THRESH=0.3
