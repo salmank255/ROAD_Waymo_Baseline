@@ -146,3 +146,21 @@ CUDA_VISIBLE_DEVICES=1 python inference.py ../NuScene/samples/CAM_FRONT ../NuSce
 CUDA_VISIBLE_DEVICES=2 python inference.py ../NuScene/samples/CAM_FRONT ../NuScene ../roadpp/cache/resnet50SlowFast600-Pkinetics-b8s8x1x1-roadpptn-h3x3x3 --ARCH=resnet50 --MODEL_TYPE=SlowFast --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=8 --LR=0.0041 --MIN_SIZE=600 --GEN_CONF_THRESH=0.2
 
 
+
+
+
+
+
+
+C2D
+CUDA_VISIBLE_DEVICES=0 python main.py ../ ../ kinetics-pt/ --MODE=train --ARCH=resnet50 --MODEL_TYPE=C2D --DATASET=road_waymo --TEST_DATASET=road_waymo --TRAIN_SUBSETS=train --VAL_SUBSETS=val --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=4 --LR=0.0041 --MIN_SIZE=600
+
+RCLSTM
+CUDA_VISIBLE_DEVICES=1 python main.py ../ ../ kinetics-pt/ --MODE=train --ARCH=resnet50 --MODEL_TYPE=RCLSTM --DATASET=road_waymo --TEST_DATASET=road_waymo --TRAIN_SUBSETS=train --VAL_SUBSETS=val --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=4 --LR=0.0041 --MIN_SIZE=600
+
+
+RCGRU
+CUDA_VISIBLE_DEVICES=2 python main.py ../ ../ kinetics-pt/ --MODE=train --ARCH=resnet50 --MODEL_TYPE=RCGRU --DATASET=road_waymo --TEST_DATASET=road_waymo --TRAIN_SUBSETS=train --VAL_SUBSETS=val --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=3 --LR=0.0041 --MIN_SIZE=600
+
+RCN
+CUDA_VISIBLE_DEVICES=3 python main.py ../ ../ kinetics-pt/ --MODE=train --ARCH=resnet50 --MODEL_TYPE=RCN --DATASET=road_waymo --TEST_DATASET=road_waymo --TRAIN_SUBSETS=train --VAL_SUBSETS=val --SEQ_LEN=8 --TEST_SEQ_LEN=8 --BATCH_SIZE=2 --LR=0.0021 --MIN_SIZE=600
